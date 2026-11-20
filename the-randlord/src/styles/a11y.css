@@ -1,0 +1,39 @@
+/* Reading defaults. Apply to the document, not to individual components. */
+html { text-size-adjust: 100%; }
+
+p, li, dd {
+  max-width: var(--measure);
+  text-align: left;      /* never justify */
+  hyphens: none;         /* never hyphenate */
+  text-wrap: pretty;
+}
+
+/* Screen-reader-only text — for icon-button labels and live regions */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* High-contrast / forced-colors: keep structure visible when colour is stripped */
+@media (forced-colors: active) {
+  .card, .btn, .field__input { border: 1px solid CanvasText; }
+  .btn:focus-visible         { outline: 2px solid Highlight; }
+}
+
+/* Honour the OS-level contrast preference rather than shipping a custom toggle */
+@media (prefers-contrast: more) {
+  :root {
+    --app-ink-muted: #3C424E;
+    --app-line: rgba(37, 41, 51, 0.32);
+    --app-line-strong: rgba(37, 41, 51, 0.55);
+  }
+}
+
+/* Touch: every control keeps its 44px hit area regardless of visual size */
+@media (pointer: coarse) {
+  button, a, input, select, [role="button"] { min-height: var(--control-min); }
+}

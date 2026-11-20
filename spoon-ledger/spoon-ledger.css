@@ -1,0 +1,944 @@
+/* ============================================================================
+   SPOON LEDGER — app stylesheet on The Neurodiverse Agency v2.0 (--nda-*)
+   Loaded after nda/tokens.css and nda/components/bundle.css. Every colour,
+   font, edge and shadow here is an --nda-* token. Never edit nda/: override
+   it from this file.
+
+   CHOICES MADE FOR A WORKING TOOL (the system is drawn for web pages; these
+   are where it was silent or too roomy for a dense daily log). Change them
+   here, and keep CLAUDE.md's list in step:
+   1. Page ground: the pegboard sits on the body, but the body's 60px page
+      padding is dropped so the app starts right under the Launchpad nav bar.
+   2. Panels are a loud-frame / quiet-stage card built from the existing
+      markup: the section is the frame, its .body is the white stage. No
+      80px hatched dead zone: on a screen this dense it would push the
+      entries off the first view.
+   3. Card padding is --nda-sp-2 (20px) on the frame and on the stage at every
+      width, not 40px, so forms fit a phone.
+   4. Form fields: white, 3px Ink edge, 1rem text (not 18px body) so a dense
+      grid of number fields still fits; 1rem also stops iOS zooming in.
+   5. Hints and long notes are sentences, so Ink-Primary, at --nda-text-small.
+   6. Selected state (view tabs, chips, number pads, logged-today tiles) is an
+      Ink fill with white words, pressed 4px down and right with no shadow. The
+      system has no selected state; this reuses the button's pressed geometry.
+   7. Budget notches: within budget = Identity-Primary (Green, the system's
+      success), last quarter = Identity-Secondary (Yellow, warning), over =
+      Semantic-Error (Red). Each sits inside an Ink edge.
+   8. Charts: crash = Semantic-Error triangle, dose = Identity-Primary disc
+      (a round actor on the stage), logged spend = Ink-Secondary bar, the
+      afternoon window = UI-Lines band. Spent bars in the carry chain are
+      Ink-Secondary (Yellow fails 3:1 as a thin bar on white).
+   9. Entry tags (spend, dose, crash, allocation) were coloured fills. They are
+      now white stamps with an Ink edge; the words say the kind. They sit level
+      and without a shadow inside dense rows. The second chip tag uses
+      Identity-Secondary (Yellow) fill with Ink words.
+  10. Destructive buttons keep the two-tap confirm. The armed state is an Ink
+      fill with white words, not red: red is for errors only.
+  11. Warning boxes are an Identity-Secondary (Yellow) fill with Ink words and
+      an Ink edge (8.26:1).
+  12. Motion: every state change is instant (0s step-end); the notch fill and
+      toast no longer ease.
+  13. Coloured left-edge stripes in the All view are gone (the system has no
+      one-sided stripes); each row's kind is already in its words.
+  14. The header row wraps on a phone instead of running off the screen.
+   ============================================================================ */
+
+/* ============================================================================
+   1. BASE
+   ============================================================================ */
+[hidden] { display: none !important; }
+
+body {
+  padding: 0;
+  font-size: var(--nda-text-body);
+}
+
+/* The shared Launchpad nav bar is its own island of styles: keep the
+   system's bare-element rules (list spacing, measure) out of it. */
+.lp-root ul, .lp-root ol { max-width: none; font-size: inherit; margin-bottom: 0; padding-left: 0; }
+.lp-root li { margin-bottom: 0; }
+.lp-root p { max-width: none; }
+
+*, *::before, *::after { transition: all 0s step-end; }
+
+.app-shell {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--nda-sp-2) var(--nda-sp-2) var(--nda-sp-5);
+}
+
+.nano-label.subhead { margin: var(--nda-sp-2) 0 var(--nda-sp-1); }
+summary.nano-label.subhead { margin: 0; cursor: pointer; display: list-item; }
+
+/* ============================================================================
+   2. STICKY HEADER
+   ============================================================================ */
+.app-header {
+  position: sticky;
+  /* Under the shared Launchpad nav bar, which publishes its height. */
+  top: var(--lp-nav-height, 0px);
+  z-index: 50;
+  background: var(--nda-canvas-primary);
+  border-bottom: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  padding: var(--nda-sp-1) var(--nda-sp-2);
+}
+
+.app-header__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--nda-sp-1);
+  flex-wrap: wrap;
+}
+
+.app-header__left, .app-header__center, .app-header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--nda-sp-1);
+}
+
+.app-header .ref-stamp { margin: 0; transform: none; }
+.app-header .nano-label, .daybar .nano-label { display: inline; margin: 0; }
+
+/* View tabs */
+.viewtabs { display: flex; gap: var(--nda-sp-1); }
+
+.vtab {
+  font-family: var(--nda-font-header);
+  font-size: var(--nda-text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 16px;
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  background: var(--nda-canvas-container);
+  color: var(--nda-ink-primary);
+  box-shadow: var(--nda-shadow-sm);
+  cursor: pointer;
+}
+
+.vtab:hover {
+  background-image: repeating-linear-gradient(-45deg, var(--nda-ui-lines), var(--nda-ui-lines) 3px, transparent 3px, transparent 12px);
+}
+
+.vtab.on {
+  background: var(--nda-ink-primary);
+  color: var(--nda-canvas-container);
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+/* ============================================================================
+   3. DAYBAR
+   ============================================================================ */
+.daybar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nda-sp-1);
+  flex-wrap: wrap;
+  padding: var(--nda-sp-1) var(--nda-sp-2);
+  margin-bottom: var(--nda-sp-2);
+  background: var(--nda-canvas-container);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+}
+
+.daybar .lab { color: var(--nda-ink-primary); font-weight: 700; }
+
+/* Looking at a past day: the warning colour, with Ink words */
+.daybar.back { background: var(--nda-identity-secondary); }
+.daybar.back .nano-label { color: var(--nda-ink-primary); }
+
+#daybar-date {
+  width: auto;
+  min-height: 36px;
+  padding: 4px 8px;
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+}
+
+/* ============================================================================
+   4. CAPACITY BALANCE
+   ============================================================================ */
+.balance {
+  background: var(--nda-canvas-container);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  box-shadow: var(--nda-shadow-md);
+  padding: var(--nda-sp-2);
+  margin-bottom: var(--nda-sp-3);
+}
+
+.figures {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--nda-sp-1);
+  flex-wrap: wrap;
+  margin-bottom: var(--nda-sp-2);
+}
+
+.bignum {
+  font-family: var(--nda-font-header);
+  font-weight: 700;
+  font-size: var(--nda-text-h1);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--nda-ink-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.figures .caption {
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--nda-ink-secondary);
+}
+
+.figures .caption b {
+  display: block;
+  font-family: var(--nda-font-header);
+  font-size: var(--nda-text-h3);
+  color: var(--nda-ink-primary);
+  margin-top: 2px;
+}
+
+.notches {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  min-height: 36px;
+}
+
+.notch {
+  flex: 1 1 18px;
+  min-width: 12px;
+  height: 36px;
+  position: relative;
+  overflow: hidden;
+  background: var(--nda-canvas-primary);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+}
+
+.notch .fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: bottom;
+  background: var(--nda-identity-primary);
+}
+
+.notch.warn .fill { background: var(--nda-identity-secondary); }
+
+.notch.over { background: var(--nda-canvas-container); }
+.notch.over .fill { background: var(--nda-semantic-error); }
+
+.notch:not(.over) + .notch.over {
+  margin-left: var(--nda-sp-2);
+  overflow: visible;
+}
+
+.notch:not(.over) + .notch.over::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: -6px;
+  bottom: -6px;
+  width: var(--nda-stroke-base);
+  background: var(--nda-ink-primary);
+}
+
+.legend {
+  display: flex;
+  gap: var(--nda-sp-2);
+  flex-wrap: wrap;
+  margin-top: var(--nda-sp-1);
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  color: var(--nda-ink-secondary);
+}
+
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   5. LOG BUTTONS (crash + the five-up bar)
+   ============================================================================ */
+.crashbtn, .logbtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  padding: var(--nda-sp-2);
+  min-height: 64px;
+  font-family: var(--nda-font-header);
+  font-size: var(--nda-text-h3);
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.crashbtn { margin-bottom: var(--nda-sp-2); }
+
+.crashbtn small, .logbtn small {
+  display: block;
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: var(--nda-ink-secondary);
+}
+
+.logbar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--nda-sp-1);
+  margin-bottom: var(--nda-sp-3);
+}
+
+/* Already logged today: the sub-label turns Green and bold (allowed on white) */
+.logbtn.actioned small, .crashbtn.actioned small {
+  color: var(--nda-identity-primary);
+  font-weight: 700;
+}
+
+/* The tile whose form is open */
+.logbtn.on, .crashbtn.on {
+  background: var(--nda-ink-primary);
+  color: var(--nda-canvas-container);
+  border-color: var(--nda-ink-primary);
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+.logbtn.on:hover, .crashbtn.on:hover { background: var(--nda-ink-primary); background-image: none; }
+.logbtn.on small, .crashbtn.on small { color: var(--nda-canvas-container); }
+
+@media (max-width: 640px) {
+  .logbtn {
+    padding: 8px 6px;
+    min-height: 52px;
+    font-size: var(--nda-text-label);
+  }
+  .logbtn small {
+    font-size: 10px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .logbar { gap: 4px; }
+  .logbtn { padding: 6px 4px; min-height: 46px; font-size: 10px; }
+  .logbtn small { display: none; }
+}
+
+/* Two-tap confirm, armed: Ink fill and new words, never red */
+.btn.is-armed, .btn.is-armed:hover:not(:disabled) {
+  background: var(--nda-ink-primary);
+  background-image: none;
+  color: var(--nda-canvas-container);
+  border-color: var(--nda-ink-primary);
+}
+.btn.is-armed small { color: var(--nda-canvas-container); }
+
+/* ============================================================================
+   6. THE SHEET (inline form drawer) — a frame with a white stage
+   ============================================================================ */
+.sheet-anchor { position: relative; z-index: 30; }
+
+#sheet {
+  /* The script caps the height to what is left of the window (240px at the
+     least). The frame and footer need room too, so the sheet never drops
+     below this, even when the cap is smaller; the page scrolls instead. */
+  min-height: min(460px, 85vh);
+  background: var(--nda-canvas-primary);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  box-shadow: var(--nda-shadow-md);
+  padding: var(--nda-sp-2);
+  margin-bottom: var(--nda-sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nda-sp-2);
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nda-sp-1);
+}
+
+.sheet-head span {
+  font-family: var(--nda-font-header);
+  font-size: var(--nda-text-h3);
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--nda-ink-primary);
+}
+
+.sheet-body {
+  /* The script caps the sheet's height to the window; the form scrolls inside it. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--nda-sp-2);
+  background: var(--nda-canvas-container);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+}
+
+.sheet-foot { padding: 0; flex: none; }
+
+.sheetpanel { border: 0; }
+.sheetpanel > header { display: none; }
+
+/* ============================================================================
+   7. PANELS — loud frame, quiet stage
+   ============================================================================ */
+.panel {
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  background: var(--nda-canvas-primary);
+  box-shadow: var(--nda-shadow-md);
+  padding: var(--nda-sp-2);
+  margin-bottom: var(--nda-sp-3);
+}
+
+.panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--nda-sp-1);
+  margin-bottom: var(--nda-sp-2);
+}
+
+.panel > header h2 {
+  font-size: var(--nda-text-h3);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.panel > header .note {
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--nda-ink-secondary);
+}
+
+.panel > .body {
+  background: var(--nda-canvas-container);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  padding: var(--nda-sp-2);
+}
+
+/* ============================================================================
+   8. FORMS
+   ============================================================================ */
+.grid { display: grid; gap: var(--nda-sp-1); }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.g4 { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+
+label.field { display: block; }
+label.field > .lab { display: block; margin-bottom: 6px; }
+
+input[type=text], input[type=number], input[type=date], input[type=time], select, textarea {
+  width: 100%;
+  font-family: var(--nda-font-body);
+  font-size: 1rem;
+  color: var(--nda-ink-primary);
+  background: var(--nda-canvas-container);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  padding: 8px 12px;
+  min-height: 44px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type=date], input[type=time], input[type=number] { font-family: var(--nda-font-mono); }
+
+textarea {
+  min-height: 80px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+select {
+  padding-right: 36px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--nda-ink-primary) 50%),
+                    linear-gradient(135deg, var(--nda-ink-primary) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% + 2px), calc(100% - 12px) calc(50% + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: var(--nda-stroke-base) solid var(--nda-action-primary);
+  outline-offset: 4px;
+}
+
+input[readonly] {
+  background: var(--nda-canvas-primary);
+  color: var(--nda-ink-secondary);
+}
+
+/* Range sliders */
+input[type=range] {
+  width: 100%;
+  min-height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  height: 12px;
+  background: var(--nda-canvas-primary);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+}
+
+input[type=range]::-moz-range-track {
+  height: 12px;
+  background: var(--nda-canvas-primary);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 28px;
+  margin-top: -11px;
+  background: var(--nda-ink-primary);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+}
+
+input[type=range]::-moz-range-thumb {
+  width: 20px;
+  height: 28px;
+  background: var(--nda-ink-primary);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+}
+
+.slider-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--nda-sp-1);
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  color: var(--nda-ink-secondary);
+  margin-top: 4px;
+}
+
+.slider-container output {
+  font-family: var(--nda-font-header);
+  font-size: var(--nda-text-h3);
+  font-weight: 700;
+  color: var(--nda-ink-primary);
+}
+
+.row {
+  display: flex;
+  gap: var(--nda-sp-1);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--nda-sp-1); }
+.toolbar--end { justify-content: flex-end; }
+
+/* Toggles (checkbox plates) */
+.toggles { display: flex; flex-wrap: wrap; gap: var(--nda-sp-1); }
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  padding: 6px 12px;
+  background: var(--nda-canvas-container);
+  cursor: pointer;
+  font-size: var(--nda-text-small);
+  color: var(--nda-ink-primary);
+  user-select: none;
+}
+
+.toggle:hover {
+  background-image: repeating-linear-gradient(-45deg, var(--nda-ui-lines), var(--nda-ui-lines) 3px, transparent 3px, transparent 12px);
+}
+.toggle input { margin: 0; width: 18px; height: 18px; min-height: 0; accent-color: var(--nda-ink-primary); }
+.toggle .mult { font-family: var(--nda-font-mono); font-size: var(--nda-text-label); color: var(--nda-ink-secondary); }
+.toggle:has(input:checked) { background: var(--nda-identity-secondary); }
+.toggle:has(input:checked) .mult { color: var(--nda-ink-primary); }
+
+/* Number pads */
+.costrow, .spoonrow { display: flex; flex-wrap: wrap; gap: var(--nda-sp-1); align-items: center; }
+.costlab {
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--nda-ink-secondary);
+  margin-right: 4px;
+}
+
+.cost-btn, .spoon-btn {
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  background: var(--nda-canvas-container);
+  color: var(--nda-ink-primary);
+  font-family: var(--nda-font-mono);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: var(--nda-shadow-sm);
+}
+
+.cost-btn { width: 44px; height: 44px; font-size: var(--nda-text-small); }
+.spoon-btn { width: 48px; height: 48px; font-size: 1rem; }
+
+.cost-btn:hover, .spoon-btn:hover {
+  background-image: repeating-linear-gradient(-45deg, var(--nda-ui-lines), var(--nda-ui-lines) 3px, transparent 3px, transparent 12px);
+}
+.cost-btn.on, .spoon-btn.on {
+  background: var(--nda-ink-primary);
+  background-image: none;
+  color: var(--nda-canvas-container);
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+/* Chips (toggle and filter buttons) */
+.chips { display: flex; flex-wrap: wrap; gap: var(--nda-sp-1); }
+.chip {
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  background: var(--nda-canvas-container);
+  color: var(--nda-ink-primary);
+  padding: 5px 10px;
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: var(--nda-shadow-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+input.chip { text-transform: none; min-height: 0; }
+
+.chip:hover {
+  background-image: repeating-linear-gradient(-45deg, var(--nda-ui-lines), var(--nda-ui-lines) 3px, transparent 3px, transparent 12px);
+}
+.chip.on, .chip[aria-pressed="true"] {
+  background: var(--nda-ink-primary);
+  background-image: none;
+  color: var(--nda-canvas-container);
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+.chip.on2 { background: var(--nda-identity-secondary); background-image: none; color: var(--nda-ink-primary); }
+.chip .cnt { font-weight: 400; margin-left: 2px; }
+
+.preset {
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  background: var(--nda-canvas-container);
+  box-shadow: var(--nda-shadow-sm);
+  padding: 6px 12px;
+  font-size: var(--nda-text-small);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-family: var(--nda-font-body);
+  color: var(--nda-ink-primary);
+}
+
+.preset:hover {
+  background-image: repeating-linear-gradient(-45deg, var(--nda-ui-lines), var(--nda-ui-lines) 3px, transparent 3px, transparent 12px);
+}
+.preset b { font-family: var(--nda-font-mono); font-size: var(--nda-text-label); color: var(--nda-ink-primary); }
+.preset .n { font-family: var(--nda-font-mono); font-size: var(--nda-text-label); color: var(--nda-ink-secondary); }
+
+.picker .chips { margin-top: var(--nda-sp-1); }
+
+.picker .chipfind {
+  width: 100%;
+  font-family: var(--nda-font-body);
+  font-size: 1rem;
+  padding: 8px 12px;
+  min-height: 44px;
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  background: var(--nda-canvas-container);
+}
+
+/* Sentences beside the controls */
+.hint {
+  font-size: var(--nda-text-small);
+  color: var(--nda-ink-primary);
+  margin-top: var(--nda-sp-1);
+  line-height: 1.6;
+}
+
+.hint.warnbox {
+  background: var(--nda-identity-secondary);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  padding: var(--nda-sp-1) var(--nda-sp-2);
+  margin-top: var(--nda-sp-1);
+}
+
+/* "House rule": a default Ink stamp, level, inline */
+.house {
+  display: inline-block;
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--nda-canvas-container);
+  background: var(--nda-ink-primary);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  padding: 0 8px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* ============================================================================
+   9. LEDGER ENTRIES
+   ============================================================================ */
+.entry {
+  border: 0;
+  border-bottom: var(--nda-stroke-base) solid var(--nda-ui-lines);
+  padding: var(--nda-sp-1) 0;
+  background: transparent;
+}
+
+.entry:last-child { border-bottom: 0; }
+
+.entry .head {
+  display: flex;
+  gap: var(--nda-sp-1);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.entry .head input[type=date], .entry .head input[type=time] {
+  width: auto;
+  font-size: var(--nda-text-label);
+  padding: 4px 8px;
+  min-height: 36px;
+}
+
+/* Tags: white stamps with an Ink edge; the words carry the kind */
+.tag {
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  background: var(--nda-canvas-container);
+  color: var(--nda-ink-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.del { margin-left: auto; }
+
+.tagline {
+  font-size: var(--nda-text-small);
+  color: var(--nda-ink-primary);
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.tagline b { font-weight: 700; }
+.tagline .more {
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  text-decoration: underline;
+  margin-left: 6px;
+  color: var(--nda-ink-primary);
+}
+
+/* ============================================================================
+   10. TABLES (the system styles them bare; tighten for figures)
+   ============================================================================ */
+th.num, td.num { text-align: right; font-family: var(--nda-font-mono); font-variant-numeric: tabular-nums; }
+td b { font-weight: 700; }
+
+/* ============================================================================
+   11. CHARTS
+   ============================================================================ */
+svg.timeline, svg.carrychain {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  background: var(--nda-canvas-container);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  padding: var(--nda-sp-1);
+}
+
+.tl-axis, .cc-day, .cc-num {
+  font-family: var(--nda-font-mono);
+  font-size: 11px;
+  fill: var(--nda-ink-secondary);
+}
+
+svg.timeline line { stroke: var(--nda-ink-secondary); }
+
+/* ============================================================================
+   12. ALL VIEW
+   ============================================================================ */
+.arow {
+  border-bottom: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  padding: var(--nda-sp-2) 0;
+  background: var(--nda-canvas-container);
+}
+.arow:first-child { padding-top: 0; }
+.arow:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.ahead {
+  display: flex;
+  gap: var(--nda-sp-1);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--nda-sp-1);
+  padding-bottom: var(--nda-sp-1);
+  border-bottom: var(--nda-stroke-base) solid var(--nda-ui-lines);
+}
+
+.anum { font-family: var(--nda-font-mono); font-size: var(--nda-text-label); color: var(--nda-ink-secondary); }
+.afields { display: flex; flex-wrap: wrap; gap: var(--nda-sp-1); align-items: flex-end; }
+.f { display: block; min-width: 0; max-width: 100%; }
+.fl {
+  display: block;
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--nda-ink-secondary);
+  margin-bottom: 4px;
+}
+
+.arow .f input, .arow .f select {
+  font-size: var(--nda-text-small);
+  padding: 4px 8px;
+  min-height: 36px;
+  max-width: 100%;
+}
+
+/* ============================================================================
+   13. CONSTANTS, STORAGE NOTE, TOAST, EMPTY STATES
+   ============================================================================ */
+details.constants {
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  background: var(--nda-canvas-primary);
+  box-shadow: var(--nda-shadow-md);
+  padding: var(--nda-sp-2);
+  margin-bottom: var(--nda-sp-3);
+}
+
+details.constants > summary {
+  font-family: var(--nda-font-header);
+  font-size: var(--nda-text-h3);
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: var(--nda-ink-primary);
+  cursor: pointer;
+  list-style: none;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+details.constants[open] > summary { margin-bottom: var(--nda-sp-2); }
+details.constants > summary::-webkit-details-marker { display: none; }
+details.constants > summary::before { content: "+"; margin-right: 10px; }
+details.constants[open] > summary::before { content: "\2013"; }
+
+details.constants > .body {
+  background: var(--nda-canvas-container);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  padding: var(--nda-sp-2);
+}
+
+.storagenote {
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--nda-ink-secondary);
+  text-align: center;
+  padding: var(--nda-sp-3) 0;
+}
+
+.storagenote.warn { color: var(--nda-semantic-error); }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: var(--nda-sp-4);
+  transform: translateX(-50%);
+  background: var(--nda-ink-primary);
+  color: var(--nda-canvas-container);
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  box-shadow: var(--nda-shadow-sm);
+  padding: var(--nda-sp-1) var(--nda-sp-2);
+  font-family: var(--nda-font-mono);
+  font-size: var(--nda-text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.toast.on { opacity: 1; }
+
+.empty {
+  border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+  background: var(--nda-canvas-container);
+  padding: var(--nda-sp-2);
+  color: var(--nda-ink-primary);
+  font-size: var(--nda-text-small);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nda-sp-1);
+  width: 100%;
+}
+
+.empty.is-center {
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+}

@@ -1,0 +1,350 @@
+/* =====================================================================
+   ND AGENCY : CORE (shared parts)
+   The core block from every ND Agency doc, after its token list.
+   The tokens themselves come from tokens.css (tokens.json), under their
+   core-block names (--nda-*). Load tokens.css first, then this file.
+   ===================================================================== */
+/* The three font tokens under their core-block names.
+   tokens.css names the families --font-header, --font-body and --font-mono. */
+:root {
+    --nda-font-header: var(--font-header);
+    --nda-font-body: var(--font-body);
+    --nda-font-mono: var(--font-mono);
+}
+
+/* Geometry Doctrine Rule 1: every spatial element is sharp. */
+*, *::before, *::after {
+    border-radius: var(--nda-radius-none) !important;
+    text-shadow: none !important;
+    box-sizing: border-box;
+}
+/* Geometry Doctrine Rule 3: the closed round list (in CSS: the eye and plain discs). */
+.witness-eye, .pupil, .nda-disc { border-radius: var(--nda-radius-full) !important; }
+
+body {
+    background-color: var(--nda-canvas-primary);
+    color: var(--nda-ink-primary);
+    /* The pegboard: 20px pitch, round holes of 2px radius */
+    background-image: radial-gradient(circle, var(--nda-ui-lines) 2px, transparent 2px);
+    background-size: 20px 20px;
+    background-position: 0 0;
+    font-family: var(--nda-font-body);
+    font-size: var(--nda-text-body);
+    line-height: 1.6;
+    margin: 0;
+    padding: var(--nda-sp-4) var(--nda-sp-2);
+    overflow-x: clip;                   /* a bleeding NameBox runs past the window edge; this stops a sideways scrollbar */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+    max-width: var(--nda-page-max);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--nda-sp-5);
+}
+
+/* ---------- Type ---------- */
+h1, h2, h3, h4 {
+    font-family: var(--nda-font-header);
+    font-weight: 700;
+    color: var(--nda-ink-primary);
+    margin-top: 0;
+    line-height: 1.1;
+    text-transform: uppercase;
+    overflow-wrap: break-word;
+}
+h1 { font-size: var(--nda-text-h1); letter-spacing: -0.02em; margin-bottom: var(--nda-sp-2); }
+h2 { font-size: var(--nda-text-h2); letter-spacing: -0.02em; margin-bottom: var(--nda-sp-1); }
+h3, h4 { font-size: var(--nda-text-h3); margin-bottom: var(--nda-sp-1); }
+
+p { margin-top: 0; margin-bottom: var(--nda-sp-2); font-size: var(--nda-text-body); max-width: var(--nda-measure); }
+.lead { font-size: var(--nda-text-lead); max-width: var(--nda-measure-wide); }
+.small { font-size: var(--nda-text-small); }
+.mono { font-family: var(--nda-font-mono); }
+code { font-family: var(--nda-font-mono); font-size: 0.85em; }
+ul, ol { font-size: var(--nda-text-body); max-width: var(--nda-measure); padding-left: var(--nda-sp-2); margin-top: 0; margin-bottom: var(--nda-sp-2); }
+li { margin-bottom: var(--nda-sp-1); }
+.flush-bottom { margin-bottom: 0 !important; }
+
+/* Small label. Ink-secondary is for labels and captions only. Labels never tilt. */
+.nano-label {
+    font-family: var(--nda-font-mono);
+    font-size: var(--nda-text-label);
+    text-transform: uppercase;
+    color: var(--nda-ink-secondary);
+    letter-spacing: 0.05em;
+    display: block;
+    margin-bottom: var(--nda-sp-1);
+}
+
+/* ---------- Stamp (controlled friction). Its colour is decoration; any verdict is in its words. ---------- */
+.ref-stamp {
+    display: inline-block;
+    font-family: var(--nda-font-mono);
+    font-size: var(--nda-text-label);
+    font-weight: 700;
+    background-color: var(--nda-ink-primary);
+    color: var(--nda-canvas-container);
+    padding: 4px 12px;
+    margin-bottom: var(--nda-sp-2);
+    border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transform: rotate(-2.5deg);
+    box-shadow: var(--nda-shadow-sm);
+    z-index: 10;
+}
+.ref-stamp.is-identity { background-color: var(--nda-identity-primary); color: var(--nda-canvas-container); }
+.ref-stamp.is-identity-secondary { background-color: var(--nda-identity-secondary); color: var(--nda-ink-primary); }
+.ref-stamp.is-canvas-secondary { background-color: var(--nda-canvas-secondary); color: var(--nda-canvas-container); }
+.ref-stamp.is-action { background-color: var(--nda-action-primary); color: var(--nda-ink-primary); }
+.ref-stamp.is-error { background-color: var(--nda-semantic-error); color: var(--nda-canvas-container); }
+
+/* ---------- Title block: the document header plate. Words sit in a white inner plate, never on the hatching. ---------- */
+.title-block {
+    border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+    padding: var(--nda-sp-4) var(--nda-sp-3);
+    background-color: var(--nda-canvas-container);
+    background-image: repeating-linear-gradient(-45deg, var(--nda-ui-lines), var(--nda-ui-lines) 2px, transparent 2px, transparent 20px);
+    box-shadow: var(--nda-shadow-lg);
+    position: relative;
+    transform: rotate(1deg);            /* the block may tilt ... */
+}
+.title-block-inner {
+    background-color: var(--nda-canvas-container);
+    padding: var(--nda-sp-3);
+    border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+    display: inline-block;
+    transform: rotate(-1deg);           /* ... and the words end up level */
+}
+.title-block-inner h1 { margin-bottom: var(--nda-sp-1); }
+.title-block-inner p { max-width: var(--nda-measure-wide); margin-bottom: 0; }
+
+/* ---------- NameBox: the product-page title plate. Words sit on the hatching; it bleeds off the page edge; it never tilts. ---------- */
+.name-box {
+    border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+    padding: var(--nda-sp-4) var(--nda-sp-3);
+    position: relative;
+    background-color: var(--nda-canvas-container);
+    background-image: repeating-linear-gradient(-45deg, var(--nda-ui-lines), var(--nda-ui-lines) 2px, transparent 2px, transparent 20px);
+    box-shadow: var(--nda-shadow-lg);
+}
+/* The bleed: on the named side the box runs to the window edge and drops its border. Its words stay on the column. */
+@media (min-width: 900px) {
+    .name-box.edge-left { border-left-width: 0; margin-left: calc(50% - 50vw); padding-left: calc(50vw - 50% + var(--nda-sp-3)); }
+    .name-box.edge-right { border-right-width: 0; margin-right: calc(50% - 50vw); padding-right: calc(50vw - 50% + var(--nda-sp-3)); }
+}
+@media (max-width: 899.98px) {
+    .name-box { border-left-width: 0; border-right-width: 0; margin-left: calc(var(--nda-sp-2) * -1); margin-right: calc(var(--nda-sp-2) * -1); }
+}
+.name-box-eyebrow { font-family: var(--nda-font-mono); font-size: var(--nda-text-label); color: var(--nda-ink-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 var(--nda-sp-2) 0; }
+.name-box-heading { font-family: var(--nda-font-header); font-size: var(--nda-text-h2); line-height: 1.1; margin-bottom: var(--nda-sp-2); max-width: var(--nda-measure-tight); color: var(--nda-ink-primary); text-transform: none; }
+.name-box-lead { font-size: var(--nda-text-lead); color: var(--nda-ink-primary); margin: 0 0 var(--nda-sp-3) 0; max-width: var(--nda-measure); }
+
+/* ---------- Section line (6px). Reference docs: below the heading. Product pages: above the heading block. ---------- */
+.section-divider { border-bottom: var(--nda-stroke-heavy) solid var(--nda-ink-primary); padding-bottom: var(--nda-sp-1); margin-bottom: var(--nda-sp-3); }
+.section-header { border-top: var(--nda-stroke-heavy) solid var(--nda-ink-primary); padding-top: var(--nda-sp-2); margin-bottom: var(--nda-sp-3); }
+.section-header p { font-size: var(--nda-text-lead); max-width: var(--nda-measure-wide); }
+
+/* ---------- Two-column section ---------- */
+.split-section { display: grid; grid-template-columns: 1fr 1fr; gap: var(--nda-sp-4); align-items: center; }
+@media (max-width: 899.98px) { .split-section { grid-template-columns: 1fr; gap: var(--nda-sp-3); } }
+.split-section > * { min-width: 0; }   /* lets a long conveyor clip inside its column instead of widening the page */
+
+/* ---------- Box within a box: loud frame, quiet stage ---------- */
+.ui-card-outer {
+    border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+    padding: var(--nda-sp-2);
+    background-color: var(--nda-canvas-primary);
+    box-shadow: var(--nda-shadow-md);
+}
+.ui-card-inner {
+    position: relative;
+    border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+    /* 40px all round, plus the 80px dead zone at the foot */
+    padding: var(--nda-sp-3) var(--nda-sp-3) calc(var(--nda-sp-5) + var(--nda-sp-3)) var(--nda-sp-3);
+    background-color: var(--nda-canvas-container);
+}
+/* The dead zone: 80px of hatching at the foot of cards that hold reading text. Texture only; it means nothing. */
+.ui-card-inner::after {
+    content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: var(--nda-sp-5);
+    background-image: repeating-linear-gradient(-45deg, var(--nda-ui-lines), var(--nda-ui-lines) 3px, transparent 3px, transparent 12px);
+    border-top: var(--nda-stroke-base) solid var(--nda-ink-primary); pointer-events: none; z-index: 0;
+}
+.ui-card-inner > * { position: relative; z-index: 1; }
+/* Compact and demo cards skip the dead zone. */
+.ui-card-inner.is-compact { padding: var(--nda-sp-3); }
+.ui-card-inner.is-compact::after { content: none; }
+
+/* Frames (the loud part) */
+.ui-card-outer.theme-identity { background-color: var(--nda-identity-primary); }
+.ui-card-outer.theme-identity-secondary { background-color: var(--nda-identity-secondary); }
+.ui-card-outer.theme-action { background-color: var(--nda-action-primary); }
+.ui-card-outer.theme-error { background-color: var(--nda-semantic-error); }
+.ui-card-outer.theme-error > .ui-card-inner { border-color: var(--nda-semantic-error); }            /* named ink-edge exception */
+/* Dark card: a navy frame. Navy edges are a named ink-edge exception. On navy, the inside is canvas-primary. */
+.ui-card-outer.theme-dark { background-color: var(--nda-canvas-secondary); border-color: var(--nda-canvas-secondary); }
+.ui-card-outer.theme-dark > .ui-card-inner { background-color: var(--nda-canvas-primary); border-color: var(--nda-canvas-secondary); }
+/* Breakout block: navy all the way through. Hero and breakout sections only. */
+.ui-card-outer.theme-breakout { background-color: var(--nda-canvas-secondary); border-color: var(--nda-canvas-secondary); }
+.ui-card-outer.theme-breakout > .ui-card-inner { background-color: var(--nda-canvas-secondary); border-color: var(--nda-canvas-secondary); color: var(--nda-canvas-container); }
+.ui-card-outer.theme-breakout > .ui-card-inner::after {
+    background-image: repeating-linear-gradient(-45deg, var(--nda-ui-lines-dark), var(--nda-ui-lines-dark) 3px, transparent 3px, transparent 12px);
+    border-top-color: var(--nda-canvas-secondary);
+}
+.theme-breakout h1, .theme-breakout h2, .theme-breakout h3, .theme-breakout p { color: var(--nda-canvas-container); }
+.theme-breakout .nano-label { color: var(--nda-ui-lines); }
+
+/* ---------- Buttons. Zero-second state changes. Labels are as typed; capitals only through .btn-caps. ---------- */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--nda-sp-1);
+    font-family: var(--nda-font-header); font-weight: 700; font-size: var(--nda-text-button); line-height: 1.2;
+    padding: 10px 24px; text-decoration: none; cursor: pointer; text-align: center;
+    color: var(--nda-ink-primary); background-color: transparent;
+    border: var(--nda-stroke-base) solid transparent;
+    transition: all 0s step-end;
+}
+:focus-visible { outline: var(--nda-stroke-base) solid var(--nda-action-primary); outline-offset: 4px; }   /* the focus ring, on anything that takes keyboard focus */
+.btn:focus-visible { outline: var(--nda-stroke-base) solid var(--nda-action-primary); outline-offset: 4px; }
+.btn svg { display: block; width: 16px; height: 16px; }
+/* Capitals at label size: for secondary and ghost buttons. Never on the primary button, where a small white label on orange would miss the legibility bar. */
+.btn-caps { text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--nda-text-label); padding: 12px 24px; }
+
+.btn-primary { background-color: var(--nda-action-primary); color: var(--nda-canvas-container); border-color: var(--nda-action-primary); box-shadow: var(--nda-shadow-sm); }   /* orange edge: named ink-edge exception */
+.btn-primary:hover:not(:disabled) { background-color: var(--nda-action-hover); border-color: var(--nda-action-hover); }
+.btn-secondary { background-color: var(--nda-canvas-container); color: var(--nda-ink-primary); border-color: var(--nda-ink-primary); box-shadow: var(--nda-shadow-sm); }
+.btn-primary:active:not(:disabled), .btn-secondary:active:not(:disabled) { transform: translate(4px, 4px); box-shadow: 0px 0px 0px transparent; }
+/* Hatching on hover is texture, not a signal. */
+.btn-secondary:hover:not(:disabled), .btn-ghost:hover:not(:disabled) {
+    background-color: var(--nda-canvas-container);
+    background-image: repeating-linear-gradient(-45deg, rgba(26, 26, 26, 0.08), rgba(26, 26, 26, 0.08) 3px, transparent 3px, transparent 12px);
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--nda-ink-primary); }
+.btn:disabled, .state-disabled {
+    position: relative; background-color: transparent !important; border-color: var(--nda-action-disabled) !important;   /* faded edge: named ink-edge exception */
+    color: var(--nda-ink-secondary) !important; box-shadow: none !important; transform: none !important; pointer-events: none; z-index: 1;   /* the label fades to Ink-Secondary */
+}
+.btn:disabled::after, .state-disabled::after {
+    content: ""; position: absolute; inset: -3px;
+    background: repeating-linear-gradient(-45deg, rgba(42, 56, 105, 0.22), rgba(42, 56, 105, 0.22) var(--nda-stroke-base), transparent var(--nda-stroke-base), transparent 12px);
+    z-index: -1;
+}
+
+/* ---------- The Witness Eye: a perfect circle. Never navy. Pupil is 47% of the eye's outer width and rests at the bottom. No shading. ---------- */
+.witness-eye {
+    --eye: 60px;
+    display: block; position: relative; flex: none;
+    width: var(--eye); height: var(--eye);
+    border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+    background-color: var(--nda-identity-secondary);
+    overflow: hidden;
+}
+.witness-eye .pupil {
+    position: absolute; bottom: 2px; left: 50%;
+    width: calc(var(--eye) * 0.47); height: calc(var(--eye) * 0.47);
+    background-color: var(--nda-ink-primary);
+    transform: translateX(-50%);
+    will-change: transform;
+}
+.witness-eye.eye-identity-primary { background-color: var(--nda-identity-primary); }
+.witness-eye.eye-identity-secondary { background-color: var(--nda-identity-secondary); }
+.witness-eye.eye-container { background-color: var(--nda-canvas-container); }
+.nda-disc { display: inline-block; border: var(--nda-stroke-base) solid var(--nda-ink-primary); background-color: var(--nda-identity-secondary); }
+
+/* ---------- The motif: a tapered door in a 90-degree frame. Geometry Doctrine Rule 4.
+   Soft corners come from a thick stroke in the shape's own colour (half the stroke = 10 units = a tenth of the box).
+   No ink edge: a named exception. Navy is never in the motif. ---------- */
+.motif { display: block; width: 100%; height: 100%; overflow: visible; }
+.motif-frame { fill: var(--nda-identity-primary); stroke: var(--nda-identity-primary); stroke-width: 20; stroke-linejoin: round; }
+.motif-door { fill: var(--nda-identity-secondary); stroke: var(--nda-identity-secondary); stroke-width: 20; stroke-linejoin: round; }
+
+/* ---------- Directive sign ---------- */
+.directive-sign {
+    width: 100%; padding: 24px 32px;
+    color: var(--nda-canvas-container);
+    font-family: var(--nda-font-header); font-weight: 900; text-transform: uppercase; line-height: 0.95;
+    display: flex; flex-direction: column; justify-content: center;
+    margin-bottom: var(--nda-sp-2);
+    border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+    box-shadow: var(--nda-shadow-sm);
+}
+.ds-identity { background-color: var(--nda-identity-primary); }                                      /* green, white words */
+.ds-secondary { background-color: var(--nda-identity-secondary); color: var(--nda-ink-primary); }     /* yellow, ink words */
+.ds-dark { background-color: var(--nda-canvas-secondary); }                                           /* navy, white words */
+/* The type scales with the sign's own width (container units), up to 4rem and 4.5rem, so the two-line lockup holds in any column. */
+.directive-sign { container-type: inline-size; }
+.ds-line-1 { font-size: clamp(2rem, 5vw, 4rem); font-size: clamp(1.25rem, 12.4cqw, 4rem); letter-spacing: -0.02em; display: block; white-space: nowrap; }
+.ds-line-2 { font-size: clamp(2.25rem, 5.5vw, 4.5rem); font-size: clamp(1.4rem, 13.95cqw, 4.5rem); letter-spacing: -0.02em; display: flex; align-items: center; gap: 15px; white-space: nowrap; overflow: hidden; }
+.ds-chevrons { font-family: var(--nda-font-header); font-weight: 900; letter-spacing: -0.1em; display: inline-flex; }   /* chevrons take the colour of the words */
+.ticker-wrap { flex: 1; min-width: 0; overflow: hidden; display: flex; }
+.ticker-move { display: inline-flex; white-space: nowrap; animation: nda-ticker 4s infinite linear; }   /* the one thing allowed to run by itself */
+.directive-sign:hover .ticker-move, .directive-sign:focus-within .ticker-move { animation-play-state: paused; }   /* the visitor can stop it */
+@keyframes nda-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+/* ---------- Code block: ink block, yellow bar kept inside the ink edge ---------- */
+.code-block {
+    background-color: var(--nda-ink-primary); color: var(--nda-canvas-container);
+    padding: var(--nda-sp-2) var(--nda-sp-2) var(--nda-sp-2) calc(var(--nda-sp-2) + var(--nda-stroke-heavy));
+    font-family: var(--nda-font-mono); font-size: var(--nda-text-label); line-height: 1.5;
+    overflow-x: auto; white-space: pre; margin: var(--nda-sp-2) 0;
+    border: var(--nda-stroke-base) solid var(--nda-ink-primary);
+    box-shadow: var(--nda-shadow-sm), inset var(--nda-stroke-heavy) 0 0 0 var(--nda-identity-secondary);
+}
+
+/* ---------- Tables ---------- */
+table { width: 100%; border-collapse: collapse; margin-bottom: var(--nda-sp-2); background-color: var(--nda-canvas-container); font-size: var(--nda-text-small); box-shadow: var(--nda-shadow-md); }
+th, td { border: var(--nda-stroke-base) solid var(--nda-ink-primary); padding: 10px; vertical-align: top; text-align: left; }
+th { background-color: var(--nda-ink-primary); color: var(--nda-canvas-container); font-family: var(--nda-font-header); font-size: var(--nda-text-small); letter-spacing: 0.05em; text-transform: uppercase; }
+td code { background-color: var(--nda-canvas-primary); padding: 2px 4px; }
+.table-scroll { overflow-x: auto; padding: 0 var(--nda-sp-1) var(--nda-sp-1) 0; }
+
+/* ---------- Figure: how an image sits in the system (see the Image Usage doc) ---------- */
+.nda-figure { position: relative; margin: 0; border: var(--nda-stroke-base) solid var(--nda-ink-primary); background-color: var(--nda-canvas-container); box-shadow: var(--nda-shadow-md); }
+.nda-figure > img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; }
+.nda-figure > .nda-image { width: 100%; aspect-ratio: 3 / 2; }
+.nda-figure.is-wide > img, .nda-figure.is-wide > .nda-image { aspect-ratio: 2 / 1; }
+.nda-figure.is-landscape > img, .nda-figure.is-landscape > .nda-image { aspect-ratio: 3 / 2; }
+.nda-figure.is-square > img, .nda-figure.is-square > .nda-image { aspect-ratio: 1 / 1; }
+.nda-figure.is-portrait > img, .nda-figure.is-portrait > .nda-image { aspect-ratio: 4 / 5; }
+.nda-figure.is-thumb { box-shadow: var(--nda-shadow-sm); }
+.nda-figure.is-hero { box-shadow: var(--nda-shadow-lg); }
+.nda-figure-caption {
+    position: absolute; left: 0; bottom: 0; z-index: 2; max-width: 100%;
+    font-family: var(--nda-font-mono); font-size: var(--nda-text-label); letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--nda-ink-primary); background-color: var(--nda-canvas-container);
+    padding: 4px 10px;
+    border-top: var(--nda-stroke-base) solid var(--nda-ink-primary); border-right: var(--nda-stroke-base) solid var(--nda-ink-primary);
+}
+/* Stand-in for an image in these docs (and the look of an empty frame): canvas ground, crossed guide lines */
+.nda-image {
+    display: flex; align-items: center; justify-content: center;
+    background-color: var(--nda-canvas-primary);
+    background-image:
+        linear-gradient(to top right, transparent calc(50% - 1.5px), var(--nda-ui-lines) calc(50% - 1.5px), var(--nda-ui-lines) calc(50% + 1.5px), transparent calc(50% + 1.5px)),
+        linear-gradient(to bottom right, transparent calc(50% - 1.5px), var(--nda-ui-lines) calc(50% - 1.5px), var(--nda-ui-lines) calc(50% + 1.5px), transparent calc(50% + 1.5px));
+}
+.nda-image > span { display: inline-block; font-family: var(--nda-font-mono); font-size: var(--nda-text-label); letter-spacing: 0.05em; text-transform: uppercase; color: var(--nda-ink-secondary); background-color: var(--nda-canvas-primary); padding: 2px 10px; }
+
+/* ---------- Small screens (below 900px): columns stack, and the padding inside cards and plates halves to 20px ---------- */
+@media (max-width: 899.98px) {
+    .title-block { padding: var(--nda-sp-3) var(--nda-sp-2); }
+    .title-block-inner { padding: var(--nda-sp-2); display: block; }
+    .name-box { padding: var(--nda-sp-3) var(--nda-sp-2); }
+    .ui-card-inner { padding: var(--nda-sp-2) var(--nda-sp-2) calc(var(--nda-sp-5) + var(--nda-sp-2)) var(--nda-sp-2); }
+    .ui-card-inner.is-compact { padding: var(--nda-sp-2); }
+    .table-scroll > table { min-width: 640px; }   /* a wide table scrolls inside its wrapper instead of squeezing */
+}
+
+/* ---------- Motion: everything holds still when the visitor's device asks for reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media print {
+    body { background-image: none; padding: 0; }
+    .ui-card-outer, .title-block, .name-box, table, .code-block, .nda-figure { break-inside: avoid; }
+    *, *::before, *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

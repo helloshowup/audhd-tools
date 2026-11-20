@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Five Days">
+  <defs>
+    <pattern id="hatch" width="32" height="32" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <rect width="32" height="32" fill="#FFFFFF"/>
+      <rect width="8" height="32" fill="#D3D9E8"/>
+    </pattern>
+  </defs>
+  <!-- Background canvas -->
+  <rect width="512" height="512" fill="#F4F7FA"/>
+  <!-- Hard shadow for outer frame -->
+  <rect x="38" y="38" width="452" height="452" fill="#1A1A1A"/>
+  <!-- Outer hatched frame -->
+  <rect x="22" y="22" width="452" height="452" fill="url(#hatch)" stroke="#1A1A1A" stroke-width="14"/>
+  <!-- Inner plate hard shadow -->
+  <rect x="66" y="66" width="380" height="380" fill="#1A1A1A"/>
+  <!-- Inner white plate -->
+  <rect x="54" y="54" width="380" height="380" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="12"/>
+  <!-- Top ND Green banner -->
+  <rect x="54" y="54" width="380" height="84" fill="#1C7A4E" stroke="#1A1A1A" stroke-width="12"/>
+  <!-- Banner 5 small day pips -->
+  <rect x="82" y="82" width="48" height="28" fill="#F2A223" stroke="#1A1A1A" stroke-width="6"/>
+  <rect x="148" y="82" width="48" height="28" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="6"/>
+  <rect x="214" y="82" width="48" height="28" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="6"/>
+  <rect x="280" y="82" width="48" height="28" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="6"/>
+  <rect x="346" y="82" width="48" height="28" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="6"/>
+
+  <!-- Centerpiece: Large Padkleur "5" badge on Orange action tile + timeline bars -->
+  <rect x="92" y="176" width="148" height="164" fill="#1A1A1A"/>
+  <rect x="80" y="164" width="148" height="164" fill="#DC6919" stroke="#1A1A1A" stroke-width="12"/>
+  <!-- Geometric 5 inside orange tile -->
+  <path d="M188 194 H122 V238 H172 C188 238 196 248 196 266 C196 286 184 298 156 298 H118" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="square" stroke-linejoin="miter"/>
+
+  <!-- Right side: 5-day hour/task rows -->
+  <rect x="256" y="172" width="146" height="30" fill="#1C7A4E" stroke="#1A1A1A" stroke-width="8"/>
+  <rect x="256" y="218" width="114" height="26" fill="#2A3869" stroke="#1A1A1A" stroke-width="8"/>
+  <rect x="256" y="260" width="146" height="26" fill="#F2A223" stroke="#1A1A1A" stroke-width="8"/>
+  <rect x="256" y="302" width="92" height="26" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="8"/>
+
+  <!-- Bottom 5-day strip across plate -->
+  <line x1="80" y1="378" x2="408" y2="378" stroke="#1A1A1A" stroke-width="10" stroke-linecap="square"/>
+  <rect x="80" y="358" width="40" height="40" fill="#1C7A4E" stroke="#1A1A1A" stroke-width="8"/>
+  <rect x="152" y="362" width="32" height="32" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="8"/>
+  <rect x="224" y="362" width="32" height="32" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="8"/>
+  <rect x="296" y="362" width="32" height="32" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="8"/>
+  <rect x="368" y="362" width="32" height="32" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="8"/>
+</svg>

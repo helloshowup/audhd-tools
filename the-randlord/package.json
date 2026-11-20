@@ -1,0 +1,42 @@
+{
+  "name": "the-randlord",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "RANDLORD_DEMO=1 VITE_RANDLORD_DEMO=1 tsx server.ts",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs && esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=api/index.js",
+    "start": "node dist/server.cjs",
+    "clean": "rm -rf dist server.js",
+    "lint": "tsc --noEmit",
+    "test": "node --import tsx --test src/lib/plan.test.ts",
+    "preflight": "npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "@google/genai": "^2.15.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "firebase": "^12.17.1",
+    "googleapis": "^174.0.1",
+    "motion": "^12.23.24",
+    "nd-design-system": "file:vendor/nd-design-system",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "vite": "^6.2.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.4",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "playwright": "^1.65.0",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3"
+  }
+}

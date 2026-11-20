@@ -1,0 +1,73 @@
+{
+  "apps": {
+    "five-days": {
+      "sourceDir": "five-days",
+      "targetDir": "five-days",
+      "copy": [
+        "index.html",
+        "ndi.js",
+        "pics.js",
+        "favicon.svg",
+        "icon-192.png"
+      ]
+    },
+    "the-randlord": {
+      "sourceDir": "randlord",
+      "targetDir": "the-randlord",
+      "copy": [
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json",
+        "vite.config.ts",
+        "index.html",
+        "demo-ledger.ts",
+        "server.ts",
+        "src",
+        "public",
+        "vendor"
+      ],
+      "exclude": [
+        "public/launchpad-nav",
+        "src/lib/firebase.ts",
+        "src/App.tsx"
+      ]
+    },
+    "spoon-ledger": {
+      "sourceDir": "spoon-ledger",
+      "targetDir": "spoon-ledger",
+      "copy": [
+        "index.html",
+        "spoon-ledger.css",
+        "seed.json",
+        "favicon.svg",
+        "favicon.ico",
+        "nda"
+      ],
+      "exclude": [
+        "nda/readme.md"
+      ]
+    },
+    "goal-rings": {
+      "sourceDir": "goal-rings",
+      "targetDir": "goal-rings",
+      "copy": [
+        "index.html",
+        "favicon.svg",
+        "vendor"
+      ]
+    },
+    "muscle-lookup": {
+      "sourceDir": "muscle-lookup",
+      "targetDir": "muscle-lookup",
+      "copy": [
+        "index.html",
+        "app.js",
+        "figure.js",
+        "styles.css",
+        "favicon.svg",
+        "data",
+        "images"
+      ]
+    }
+  }
+}

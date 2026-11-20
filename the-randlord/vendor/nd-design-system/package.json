@@ -1,0 +1,16 @@
+{
+  "name": "nd-design-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The ND Agency unified visual system — padkleur canon, neo-brutalist geometry. Vendored build; source lives in _tools/nd-design-system.",
+  "module": "./dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./styles.css": "./dist/styles/index.css"
+  },
+  "files": ["dist"],
+  "peerDependencies": { "react": ">=18", "react-dom": ">=18" }
+}

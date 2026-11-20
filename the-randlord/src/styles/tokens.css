@@ -1,0 +1,158 @@
+/* ND Agency — generated from tokens.json */
+:root, [data-theme="light"] {
+  --nda-canvas-primary: #f4f7fa; /* Canvas layer (Off-white). The default page ground, under the pegboard. Also the inside of cards that sit on Navy (.theme-dark). Takes Ink-Primary text (16.19), Ink-Secondary labels (4.98), Identity-Primary (4.95) and Semantic-Error (5.06). */
+  --nda-canvas-secondary: #2a3869; /* Canvas layer (Navy). A background only: breakout sections, dark card frames, breakout blocks, a Directive sign fill, a stamp fill. Never in the motif, never an eye fill, never text, never an edge on Ink (1.55). Takes white text (11.24), UI-Lines (7.95) and Identity-Secondary (5.34); never Ink. */
+  --nda-canvas-container: #ffffff; /* Canvas layer (White). The inside of cards and plates: the quiet stage. Also the white words on Ink (17.40), Navy (11.24), Semantic-Error (5.44), Identity-Primary (5.33), Action-Hover (4.99), and on Action-Primary as large text only (3.46). */
+  --nda-ink-primary: #1a1a1a; /* Ink layer. All reading text, every structural edge (3px) and every hard shadow. Never pure black. Text on White (17.40), Off-white (16.19), Identity-Secondary (8.26) and Action-Primary (5.04). Never on Navy (1.55) or Semantic-Error (3.20), and never small text on Identity-Primary (3.27). */
+  --nda-ink-secondary: #5c6b89; /* Ink layer (Grey-blue). Labels and captions only; sentences (intros, leads, body) are always Ink-Primary. On White (5.36) and Off-white (4.98). The label of a disabled button. */
+  --nda-ui-lines: #d3d9e8; /* Ink layer. Diagonal hatching, pegboard holes, layout-guide frames (a named ink-edge exception). As text: on Navy (7.95), for the labels in a breakout block. */
+  --nda-ui-lines-dark: #3a4a7d; /* Ink layer. Hatching on Navy, such as the dead zone of a breakout block. Texture only, like all hatching. */
+  --nda-identity-primary: #1c7a4e; /* Identity layer (Green), the dominant brand identifier: loud outer frames, signs, stamps, icon cards, the motif's frame, the eye. Also does the job of success. White words on it (5.33). As text, small labels on White (5.33) or Off-white (4.95). Never placed against Navy without Ink between them (2.11). */
+  --nda-identity-secondary: #f2a223; /* Identity layer (Yellow): loud outer frames, signs, stamps, the motif's door, the eye's default fill. Also does the job of warning. Ink words on it (8.26). As text only on Navy (5.34) and on Ink (8.26); never text or an edge on White or Off-white (2.11 / 1.96). */
+  --nda-action-primary: #dc6919; /* Action layer (Orange), the Catalyst: the primary button and the keyboard focus ring (3px, 4px offset; 3.46 on White passes the 3:1 bar for a ring). Also free for outer frames and stamps. Ink words at any size (5.04); white words only as large text (3.46), which is why button labels are 19px bold. Never text on a light canvas. */
+  --nda-action-hover: #b55312; /* Action layer. The primary button under the pointer, fill and edge together. White label on it: 4.99. */
+  --nda-action-disabled: rgba(42, 56, 105, 0.4); /* Action layer. The faded edge of a disabled button, a named ink-edge exception. A disabled button is exempt from the legibility bar. */
+  --nda-semantic-error: #c6302a; /* Status layer (Red). Errors, violations and Don't specimens; the only status colour with its own token (success is Identity-Primary, warning is Identity-Secondary). White words on it (5.44); as text on White (5.44) or Off-white (5.06). Never decoration in the interface. */
+  --nda-shadow-sm: 4px 4px 0px #1a1a1a; /* Buttons, stamps, Directive signs, code blocks, thumbnails and other small parts. A pressed button lands on it (translate 4px, shadow to 0). */
+  --nda-shadow-md: 6px 6px 0px #1a1a1a; /* Cards, colour swatches, type specimens, tables, content boxes, figures, icon cards. */
+  --nda-shadow-lg: 8px 8px 0px #1a1a1a; /* Hero blocks, NameBoxes, title blocks, hero figures. */
+}
+:root {
+  --nda-sp-1: 10px; /* The half-step: small gaps, the space under a label or heading. */
+  --nda-sp-2: 20px; /* The pitch: a card frame's padding, grid gaps, paragraph spacing, page side padding. Also the padding inside cards and plates below the 900px switch. */
+  --nda-sp-3: 40px; /* Padding inside an inner card and inside a title block's plate. */
+  --nda-sp-4: 60px; /* Top and bottom padding of NameBoxes and title blocks; the gap in a two-column section; the page's top and bottom padding. */
+  --nda-sp-5: 80px; /* The dead zone's height; the gap between sections in a reference doc. */
+  --nda-sp-6: 120px; /* The gap between sections on a product page. */
+  --nda-page-max: 1100px; /* The widest a page's content gets (.container). There is one small-screen switch, at 900px (not a token: media queries cannot read one): below it, columns stack, a NameBox bleeds off both edges, and the padding inside cards and plates halves to 20px. */
+  --nda-radius-none: 0; /* Every spatial element: containers, buttons, form fields, stamps, signs, tables, image frames, avatars. Enforced on * in the core CSS. */
+  --nda-radius-full: 50%; /* The Witness Eye, its pupil and plain discs only. Wire-icon bends and the motif's corners are drawn inside their SVGs, as a share of their own size, so they need no token. */
+  --nda-stroke-base: 3px; /* Every structural edge, in Ink (seven named exceptions), and the focus ring's width. */
+  --nda-stroke-heavy: 6px; /* Section lines, the spine of a type specimen, the code block's bar. */
+  --nda-text-h1: clamp(2rem, 5vw, 4rem); /* Page title and hero. Fluid: it grows with the window up to 4rem. */
+  --nda-text-h2: clamp(1.75rem, 3vw, 2.5rem); /* Section heading; NameBox heading. */
+  --nda-text-h3: 1.25rem; /* Component heading (H3 and H4). */
+  --nda-text-lead: 1.25rem; /* Intros and leads: a step above body, in the same Ink. */
+  --nda-text-body: 1.125rem; /* Body prose, everywhere (18px). */
+  --nda-text-small: 0.9375rem; /* Table text, notes beside a specimen (15px). */
+  --nda-text-label: 0.75rem; /* Labels, stamps, captions, code, capitals buttons (12px). */
+  --nda-text-button: 1.1875rem; /* Button labels (19px). At 19px bold the label counts as large text, so white on Action-Primary meets the 3:1 bar. */
+  --nda-measure: 65ch; /* Body prose reading cap (p, lists). */
+  --nda-measure-wide: 75ch; /* Intros and header paragraphs (.lead, a title block's paragraph). */
+  --nda-measure-tight: 45ch; /* NameBox heading cap. */
+  --font-header: 'Jost', 'Futura', sans-serif;
+  --font-body: 'Source Sans 3', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Space Mono', 'Courier New', monospace;
+  --text-nda-h1: 700 4rem/1.1 var(--font-header); /* Page title and hero (h1). Capitals. Fluid in use: --nda-text-h1 is clamp(2rem, 5vw, 4rem), shown here at its 4rem cap. The hero is the one place a long sentence is set in capitals. */
+  --text-nda-h2: 700 2.5rem/1.1 var(--font-header); /* Section heading (h2). Capitals. Fluid in use: --nda-text-h2 is clamp(1.75rem, 3vw, 2.5rem), shown at its cap. */
+  --text-nda-h3: 700 1.25rem/1.1 var(--font-header); /* Component heading (h3 and h4). Capitals. */
+  --text-nda-namebox-heading: 700 2.5rem/1.1 var(--font-header); /* NameBox heading (.name-box-heading): H2 size and weight, but sentence case, capped at --nda-measure-tight (45ch). */
+  --text-nda-button: 700 1.1875rem/1.2 var(--font-header); /* Button labels (.btn), as typed, in sentence case. 19px bold counts as large text, so white on Action-Primary meets the 3:1 bar. */
+  --text-nda-button-caps: 700 0.75rem/1.2 var(--font-header); /* .btn-caps: capitals at label size, for secondary and ghost buttons only. Never on the primary button, where a small white label on orange would miss the bar. */
+  --text-nda-table-heading: 700 0.9375rem/1.6 var(--font-header); /* Table headings (th): Jost capitals, white on an Ink row. */
+  --text-nda-directive: 900 4rem/0.95 var(--font-header); /* Directive signs only, the one place 900 is used. The size follows the sign's own width: line 1 clamp(1.25rem, 12.4cqw, 4rem), line 2 clamp(1.4rem, 13.95cqw, 4.5rem); shown at the line-1 cap. */
+  --text-nda-lead: 400 1.25rem/1.6 var(--font-body); /* Intros and leads (.lead), a step above body in the same Ink. Measure: --nda-measure-wide (75ch). */
+  --text-nda-body: 400 1.125rem/1.6 var(--font-body); /* Body prose everywhere (p, lists). Measure: --nda-measure (65ch). */
+  --text-nda-small: 400 0.9375rem/1.6 var(--font-body); /* Table text and notes beside a specimen (.small). */
+  --text-nda-label: 400 0.75rem/1.6 var(--font-mono); /* Labels and captions (.nano-label, caption tabs): capitals in Ink-Secondary. Labels never tilt. Every doc opens with // ACTIVE DOC : NAME. */
+  --text-nda-stamp: 700 0.75rem/1.6 var(--font-mono); /* Stamp text (.ref-stamp): 700 capitals. A stamp carries a name, never a number. */
+  --text-nda-code: 400 0.75rem/1.5 var(--font-mono); /* Code blocks (.code-block): white on Ink. */
+}
+.nda-h1 {
+  font-family: var(--font-header);
+  font-size: 4rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.nda-h2 {
+  font-family: var(--font-header);
+  font-size: 2.5rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.nda-h3 {
+  font-family: var(--font-header);
+  font-size: 1.25rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.nda-namebox-heading {
+  font-family: var(--font-header);
+  font-size: 2.5rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.nda-button {
+  font-family: var(--font-header);
+  font-size: 1.1875rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.nda-button-caps {
+  font-family: var(--font-header);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.nda-table-heading {
+  font-family: var(--font-header);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.nda-directive {
+  font-family: var(--font-header);
+  font-size: 4rem;
+  line-height: 0.95;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.nda-lead {
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.nda-body {
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.nda-small {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.nda-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+.nda-stamp {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.nda-code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-weight: 400;
+  letter-spacing: 0;
+}

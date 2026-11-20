@@ -1,0 +1,351 @@
+/* ============================================================
+   The Randlord — ND Agency Design System v2.0 Base & Interactions
+   Enforces:
+   - Zero radius doctrine on every spatial element
+   - 3px solid #1A1A1A structural ink edges
+   - Hard offset shadows (4px / 6px / 8px)
+   - Zero-second transition (transition: all 0s step-end)
+   - Jost, Source Sans 3, Space Mono typography
+   - Private Tools 3-Fill Button Rule
+   ============================================================ */
+
+:root {
+  /* Font Family Mappings */
+  --font-header: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  /* App Layer compatibility mapped to canonical NDA tokens */
+  --app-page: var(--nda-canvas-primary, #F4F7FA);
+  --app-surface: var(--nda-canvas-container, #FFFFFF);
+  --app-surface-alt: var(--nda-canvas-primary, #F4F7FA);
+  --app-ink: var(--nda-ink-primary, #1A1A1A);
+  --app-ink-muted: var(--nda-ink-secondary, #5C6B89);
+  --app-ink-faint: var(--nda-ink-secondary, #5C6B89);
+  --app-line: var(--nda-ink-primary, #1A1A1A);
+  --app-line-strong: var(--nda-ink-primary, #1A1A1A);
+  --app-accent: var(--nda-identity-primary, #1C7A4E);
+  --app-accent-tint: rgba(28, 122, 78, 0.1);
+  --app-error: var(--nda-semantic-error, #C6302A);
+  --app-error-tint: rgba(198, 48, 42, 0.1);
+  --app-success: var(--nda-identity-primary, #1C7A4E);
+  --app-success-tint: rgba(28, 122, 78, 0.1);
+
+  /* Legacy --nd-* aliases mapped cleanly to NDA tokens */
+  --nd-ink: var(--nda-ink-primary, #1A1A1A);
+  --nd-paper: var(--nda-canvas-primary, #F4F7FA);
+  --nd-surface: var(--nda-canvas-container, #FFFFFF);
+  --nd-kalk: var(--nda-ui-lines, #D3D9E8);
+  --nd-oranje: var(--nda-action-primary, #DC6919);
+  --nd-forest: var(--nda-identity-primary, #1C7A4E);
+  --nd-turkoois: var(--nda-identity-primary, #1C7A4E);
+  --nd-geel: var(--nda-identity-secondary, #F2A223);
+  --nd-blou: var(--nda-canvas-secondary, #2A3869);
+  --nd-rooi: var(--nda-semantic-error, #C6302A);
+  --nd-rule: 3px solid var(--nda-ink-primary, #1A1A1A);
+  --nd-gap: 10px;
+  --nd-s1: 20px;
+  --nd-s2: 30px;
+  --nd-s3: 40px;
+  --nd-shadow: 4px 4px 0px var(--nda-ink-primary, #1A1A1A);
+  --nd-shadow-pressed: 2px 2px 0px var(--nda-ink-primary, #1A1A1A);
+}
+
+/* Geometry Doctrine: every spatial element is sharp */
+*, *::before, *::after {
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--nda-ink-primary);
+  background: var(--nda-canvas-primary);
+  background-image: radial-gradient(circle, var(--nda-ui-lines, #D3D9E8) 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-header);
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--nda-ink-primary);
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+  border-radius: 0 !important;
+}
+
+a {
+  color: var(--nda-ink-primary);
+  text-decoration: underline;
+}
+
+a:hover {
+  color: var(--nda-action-primary);
+}
+
+::selection {
+  background: var(--nda-identity-secondary);
+  color: var(--nda-ink-primary);
+}
+
+/* Keyboard focus ring (3px, 4px offset) */
+:focus-visible {
+  outline: 3px solid var(--nda-action-primary) !important;
+  outline-offset: 4px !important;
+}
+
+/* ── Keyframes ── */
+@keyframes rl-dot-breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.8; }
+}
+@keyframes rl-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.rl-breathe { animation: rl-dot-breathe 2.4s ease-in-out infinite; }
+.rl-enter { animation: rl-fade-up 0.15s ease-out both; }
+
+/* ── Private Tools 3-Fill Button Rule ── */
+.nda-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-header);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.2;
+  cursor: pointer;
+  border: 3px solid var(--nda-ink-primary);
+  box-shadow: var(--nda-shadow-sm, 4px 4px 0px #1A1A1A);
+  transition: all 0s step-end !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.nda-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px var(--nda-ink-primary);
+}
+
+.nda-btn:active:not(:disabled) {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px transparent;
+}
+
+.nda-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 1. Orange: Changes a record of user's */
+.nda-btn-action, .nda-btn-primary {
+  background-color: var(--nda-action-primary, #DC6919);
+  color: var(--nda-canvas-container, #FFFFFF);
+  border-color: var(--nda-ink-primary, #1A1A1A);
+}
+.nda-btn-action:hover:not(:disabled), .nda-btn-primary:hover:not(:disabled) {
+  background-color: var(--nda-action-hover, #B55312);
+}
+
+/* 2. Green: Hands work to Claude / AI */
+.nda-btn-ai {
+  background-color: var(--nda-identity-primary, #1C7A4E);
+  color: var(--nda-canvas-container, #FFFFFF);
+  border-color: var(--nda-ink-primary, #1A1A1A);
+}
+.nda-btn-ai:hover:not(:disabled) {
+  background-color: #155e3c;
+}
+
+/* 3. White: Only shows more or toggles UI view */
+.nda-btn-secondary, .nda-btn-ghost {
+  background-color: var(--nda-canvas-container, #FFFFFF);
+  color: var(--nda-ink-primary, #1A1A1A);
+  border-color: var(--nda-ink-primary, #1A1A1A);
+}
+.nda-btn-secondary:hover:not(:disabled), .nda-btn-ghost:hover:not(:disabled) {
+  background-color: var(--nda-canvas-primary, #F4F7FA);
+}
+
+/* Semantic Danger */
+.nda-btn-danger {
+  background-color: var(--nda-semantic-error, #C6302A);
+  color: var(--nda-canvas-container, #FFFFFF);
+  border-color: var(--nda-ink-primary, #1A1A1A);
+}
+
+/* Input Fields */
+.rl-input {
+  border: 3px solid var(--nda-ink-primary) !important;
+  background: var(--nda-canvas-container, #FFFFFF) !important;
+  color: var(--nda-ink-primary, #1A1A1A) !important;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 12px;
+  box-shadow: none;
+}
+.rl-input:focus {
+  outline: 3px solid var(--nda-action-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Tables & Rows */
+.rl-row {
+  transition: background-color 0s step-end;
+}
+.rl-row:hover {
+  background-color: rgba(42, 56, 105, 0.06);
+}
+
+/* ── Layout Shell & 900px Responsive Switch (ND Agency Doctrine) ── */
+.rl-app-shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-rows: 60px auto;
+  min-height: 100vh;
+  align-items: start;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+.rl-brand-cell {
+  grid-column: 1;
+  grid-row: 1;
+  position: sticky;
+  top: var(--lp-nav-height, 0px);
+  z-index: 50;
+  height: 60px;
+  background-color: var(--nda-canvas-secondary, #2A3869);
+  border-right: 3px solid var(--nda-ink-primary);
+  border-bottom: 3px solid var(--nda-ink-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.rl-topbar {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: var(--lp-nav-height, 0px);
+  z-index: 50;
+  min-height: 60px;
+  background-color: var(--nda-canvas-container, #FFFFFF);
+  border-bottom: 3px solid var(--nda-ink-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 24px;
+  box-sizing: border-box;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.rl-sidebar {
+  grid-column: 1;
+  grid-row: 2;
+  position: sticky;
+  top: calc(60px + var(--lp-nav-height, 0px));
+  height: calc(100vh - 60px - var(--lp-nav-height, 0px));
+  background-color: var(--nda-canvas-secondary, #2A3869);
+  border-right: 3px solid var(--nda-ink-primary);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.rl-content-area {
+  grid-column: 2;
+  grid-row: 2;
+  width: 100%;
+  max-width: var(--nda-page-max, 1100px);
+  margin: 0 auto;
+  padding: 30px 24px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .rl-app-shell {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .rl-brand-cell {
+    position: static;
+    width: 100%;
+    border-right: none;
+  }
+
+  .rl-topbar {
+    position: static;
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .rl-sidebar {
+    position: static;
+    height: auto;
+    width: 100%;
+    border-right: none;
+    border-bottom: 3px solid var(--nda-ink-primary);
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .rl-sidebar nav {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .rl-sidebar nav button {
+    flex: 1 1 auto;
+  }
+
+  .rl-content-area {
+    padding: 16px 12px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+}

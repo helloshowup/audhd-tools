@@ -1,0 +1,2742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spoon Protocol Ledger</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<!-- The Neurodiverse Agency v2.0 design system, vendored in nda/ (consume it,
+     never edit it). Tokens first, then its shared parts, then the fonts. -->
+<link rel="stylesheet" href="nda/tokens.css">
+<link rel="stylesheet" href="nda/components/bundle.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@700;900&family=Source+Sans+3:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="spoon-ledger.css">
+</head>
+<body>
+<div id="gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--nda-canvas-primary);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <h2 style="margin-bottom:var(--nda-sp-2);">Spoon Protocol Ledger</h2>
+    <p id="gate-error" class="nano-label" style="color:var(--nda-semantic-error);max-width:340px;text-align:center;margin-bottom:var(--nda-sp-2);"></p>
+</div>
+<script>
+(function(){
+  const gate = document.getElementById('gate');
+  window.dbStore = {
+    updateRev() {},
+    async get(k) { return localStorage.getItem(k); },
+    async set(k, v) { localStorage.setItem(k, v); return { status: 200, data: { rev: 1 } }; }
+  };
+  window.spoonSync = true;
+  if (gate) gate.style.display = 'none';
+  window.addEventListener('DOMContentLoaded', () => {
+    if (typeof window.startApp === 'function') window.startApp();
+  });
+})();
+</script>
+<div id="app-wrap" style="display:none;">
+
+<header class="app-header">
+  <div class="app-header__inner">
+    <!-- Zone 1: App Brand (the shared bar above carries the way back to Launchpad) -->
+    <div class="app-header__left">
+      <span class="nano-label ref-stamp">Spoon Protocol Ledger</span>
+    </div>
+
+    <!-- Zone 2: Navigation ViewTabs -->
+    <div class="app-header__center viewtabs" role="tablist" aria-label="Ledger Views">
+      <button class="vtab on" id="v-log" role="tab" aria-selected="true">Log</button>
+      <button class="vtab" id="v-look" role="tab" aria-selected="false">Look</button>
+      <button class="vtab" id="v-all" role="tab" aria-selected="false">All</button>
+    </div>
+
+    <!-- Zone 3: Sync & Status Indicator -->
+    <div class="app-header__right">
+      <span class="nano-label" id="header-sync">&bull; synced</span>
+    </div>
+  </div>
+</header>
+
+<main class="app-shell">
+
+<div class="daybar" id="daybar">
+  <span class="lab nano-label" id="daybar-lab" style="margin-bottom:0;">Logging today</span>
+  <span class="nano-label" id="datestamp">&nbsp;</span>
+  <input type="date" id="daybar-date">
+  <button id="daybar-today" class="btn btn-secondary btn-caps" hidden>back to today</button>
+</div>
+
+<div id="view-log">
+
+<div class="balance">
+  <div class="figures">
+    <div><div class="bignum" id="remaining">0.0</div></div>
+    <div class="caption"><span id="lab-left">left today</span><b id="budget-line">of 0.0</b></div>
+    <div class="caption">spent<b id="spent">0.0</b></div>
+    <div class="caption">entries<b id="count">0</b></div>
+    <div class="caption">since dose<b id="sincedose">no dose logged</b></div>
+  </div>
+  <div class="notches" id="notches"></div>
+  <div class="legend">
+    <span><i class="swatch" style="background:var(--nda-identity-primary)"></i>within budget</span>
+    <span><i class="swatch" style="background:var(--nda-identity-secondary)"></i>last quarter</span>
+    <span><i class="swatch" style="background:var(--nda-semantic-error)"></i>over</span>
+  </div>
+</div>
+
+<button class="crashbtn btn btn-secondary" id="b-zero">Crashed<small>records on tap</small></button>
+<div class="logbar">
+  <button class="logbtn btn btn-secondary" id="b-sleep">Sleep<small>opens a form</small></button>
+  <button class="logbtn btn btn-secondary" id="b-dose">Dose<small>asks when</small></button>
+  <button class="logbtn btn btn-secondary" id="b-morning">Morning<small>opens a form</small></button>
+  <button class="logbtn btn btn-secondary" id="b-checkin">Check-in<small>opens a form</small></button>
+  <button class="logbtn btn btn-secondary" id="b-spend">Spoon spend<small>opens a form</small></button>
+</div>
+
+<div class="sheet-anchor">
+  <div id="sheet" hidden>
+    <div class="sheet-head"><span id="sheet-title">&nbsp;</span><button class="ghost tiny btn btn-ghost btn-caps" id="sheet-close">close</button></div>
+    <div class="sheet-body" id="sheet-body">
+<!-- ZERO SHEET -->
+<section class="sheetpanel" id="p-zero" hidden>
+  <header><h2>Crash logged</h2></header>
+  <div class="body" id="zero-body"></div>
+</section>
+
+<!-- DOSE SHEET -->
+<section class="sheetpanel" id="p-dose" hidden>
+  <header><h2>Dose logged</h2></header>
+  <div class="body" id="dose-body"></div>
+</section>
+
+<!-- SLEEP SHEET -->
+<section class="sheetpanel" id="p-sleep" hidden>
+  <header><h2>Sleep logged</h2></header>
+  <div class="body" id="sleep-body"></div>
+</section>
+
+<!-- MORNING -->
+<section class="sheetpanel" id="p-morning" hidden>
+  <header><h2>Morning estimate</h2></header>
+  <div class="body">
+    <div class="spoonrow" id="spoonRow"></div>
+    <div class="hint" id="morningNote">Tap the number that matches. Tap another to change it.</div>
+    <label class="field" style="margin-top:14px"><span class="lab nano-label">Sleep Quality (1-5)</span>
+      <input type="range" id="morn-sleep-qual" min="1" max="5" value="3" step="1" oninput="this.nextElementSibling.querySelector('output').textContent = this.value">
+      <div class="slider-container"><span>1: terrible</span><output>3</output><span>5: excellent</span></div>
+    </label>
+  </div>
+</section>
+
+<!-- SPEND -->
+<section class="sheetpanel" id="p-spend" hidden>
+  <header><h2>Log a spend</h2></header>
+  <div class="body">
+    <div class="costrow" id="sp-felt"></div>
+    <div class="picker" id="sp-chips" style="margin-top:11px"></div>
+    <label class="field" style="margin-top:11px"><span class="lab nano-label">What was it</span><input type="text" id="sp-label" placeholder="optional label"></label>
+    <div class="row" id="sp-when" hidden style="margin-top:11px"><span class="costlab">happened at</span><input type="time" id="sp-time" style="width:auto"></div>
+    
+    <label class="field" style="margin-top:11px"><span class="lab nano-label">Allocation Tag</span>
+      <select id="sp-alloc">
+        <option value="revenue-touching" selected>revenue-touching</option>
+        <option value="member-facing">member-facing</option>
+        <option value="meta">meta</option>
+      </select>
+    </label>
+    
+    <label class="field" style="margin-top:11px"><span class="lab nano-label">Task Initiation Friction (1-5)</span>
+      <input type="range" id="sp-friction" min="1" max="5" value="3" step="1" oninput="this.nextElementSibling.querySelector('output').textContent = this.value">
+      <div class="slider-container"><span>1: easy</span><output>3</output><span>5: paralysis</span></div>
+    </label>
+
+    <label class="field" style="margin-top:11px"><span class="lab nano-label">Restoration Quality (1-5)</span>
+      <input type="range" id="sp-recovery" min="1" max="5" value="3" step="1" oninput="this.nextElementSibling.querySelector('output').textContent = this.value">
+      <div class="slider-container"><span>1: none</span><output>3</output><span>5: completely restored</span></div>
+    </label>
+
+    <div class="hint">Felt spoons is the only thing this needs. Everything else is optional.</div>
+
+    <details style="margin-top:12px">
+      <summary class="nano-label subhead">Add heart rate and duration (optional)</summary>
+      <div style="padding-top:11px">
+        <div class="grid g3">
+          <label class="field"><span class="lab nano-label">Heart rate</span><input type="number" id="sp-hr" placeholder="bpm"></label>
+          <label class="field"><span class="lab nano-label">Minutes</span><input type="number" id="sp-dur" placeholder="min"></label>
+          <label class="field"><span class="lab nano-label">Head load</span>
+            <select id="sp-dial">
+              <option value="1">1 · none</option><option value="2">2 · light</option>
+              <option value="3" selected>3 · steady</option><option value="4">4 · heavy</option>
+              <option value="5">5 · relentless</option>
+            </select></label>
+        </div>
+        <div class="toggles" id="sp-tags" style="margin-top:11px"></div>
+        <div class="hint" id="sp-why">Computed cost appears here once heart rate and minutes are in.</div>
+        <div class="hint warnbox">Heart rate contributed about 5% of your computed total on a sample day, because a medicated reading below your baseline gives zero heart-rate reserve. Phone spot readings are also the least defensible cardiac signal in clinical notes. Treat computed cost as a second opinion, never the record.</div>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- CHECK-IN -->
+<section class="sheetpanel" id="p-checkin" hidden>
+  <header><h2>Check-in</h2></header>
+  <div class="body">
+    <div class="hint" style="margin-top:0;margin-bottom:12px">One tap on anything here logs a check-in. Nothing is required.</div>
+    <div id="ci-domains"></div>
+    <div id="ci-context"></div>
+    <details id="ci-more" style="margin-top:12px">
+      <summary class="nano-label subhead">More</summary>
+      <div id="ci-more-domains" style="margin-top:12px"></div>
+      <label class="field" style="margin-top:12px"><span class="lab nano-label">Anything else</span><textarea id="ci-note" placeholder="optional"></textarea></label>
+    </details>
+    <div class="row" id="ci-when" hidden style="margin-top:11px"><span class="costlab">happened at</span><input type="time" id="ci-time" style="width:auto"></div>
+    <div id="ci-admin" hidden style="margin-top:12px;border-top:1px solid var(--nda-ui-lines);padding-top:12px"></div>
+  </div>
+</section>
+
+    </div>
+    <div class="sheet-foot" id="sheet-foot" hidden></div>
+  </div>
+  <div id="foot-park" hidden>
+    <div class="row toolbar toolbar--end" id="sp-actions" style="gap:var(--nda-sp-1);">
+      <button class="ghost btn btn-secondary btn-caps" id="sp-clear">Clear</button>
+      <button id="sp-save" class="btn btn-primary">Log it</button>
+    </div>
+    <div class="row toolbar toolbar--end" id="ci-actions" style="gap:var(--nda-sp-1);">
+      <button class="ghost tiny btn btn-secondary btn-caps" id="ci-edit">Edit options</button>
+      <button id="ci-save" class="btn btn-primary">Log check-in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENTRIES -->
+<section class="panel">
+  <header><h2 id="lab-entries">Today's entries</h2><span class="note"><button class="ghost tiny btn btn-ghost btn-caps" id="btn-undo">Undo last</button></span></header>
+  <div class="body" id="ledger-body"></div>
+</section>
+
+</div>
+
+<div id="view-look" hidden>
+<section class="panel"><header><h2 id="lab-budget">How today's budget was built</h2></header>
+  <div class="body"><div class="whyline dark" id="budget-why"></div></div></section>
+
+<!-- TODAY STATE -->
+<section class="panel">
+  <header><h2 id="lab-state">Today's starting state</h2><span class="note nano-label">all optional</span></header>
+  <div class="body">
+    <div class="grid g4">
+      <label class="field"><span class="lab nano-label">Sleep (h)</span><input type="number" id="day-sleep" step="0.5" placeholder="hours"></label>
+      <label class="field"><span class="lab nano-label">Resting HR (bpm)</span><input type="number" id="day-rhr" placeholder="bpm"></label>
+      <label class="field"><span class="lab nano-label">HRV RMSSD (ms)</span><input type="number" id="day-hrv" placeholder="ms"></label>
+      <label class="field"><span class="lab nano-label">Carried over</span><input type="text" id="day-carry" readonly></label>
+    </div>
+    <div class="toggles" id="day-tags" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:11px"><button class="ghost tiny btn btn-secondary btn-caps" id="b-skip">No dose today</button>
+      <span class="hint" style="margin:0">Clinical notes is explicit that medicated and non-medicated days should not be pooled, so a skipped day is worth marking.</span></div>
+    <div class="hint">Resting HR and HRV are switched off in the budget by default. A phone gives daytime spot readings, and clinical notes ranks nocturnal resting HR and overnight RMSSD as the only defensible cardiac inputs. Turn them back on in Constants if you get a device that measures overnight.</div>
+  </div>
+</section>
+
+<!-- AFTERNOON DIP -->
+<section class="panel">
+  <header><h2>When things happen</h2><span class="note" id="timeline-stat"></span></header>
+  <div class="body">
+    <svg class="timeline" id="timeline" viewBox="0 0 960 112" preserveAspectRatio="none" role="img" aria-labelledby="tl-title"><title id="tl-title">Clock-time of crashes, doses and logged activity across all recorded days</title></svg>
+    <div class="legend dark">
+      <span><i class="swatch" style="background:var(--nda-semantic-error)"></i>▼ zero-spoon crash</span>
+      <span><i class="swatch" style="background:var(--nda-identity-primary)"></i>● dose</span>
+      <span><i class="swatch" style="background:var(--nda-ink-secondary)"></i>│ logged spend</span>
+      <span><i class="swatch" style="background:var(--nda-ui-lines)"></i>14:00 to 16:00</span>
+    </div>
+    <div class="hint" id="dip-why"></div>
+  </div>
+</section>
+
+<!-- PRESETS -->
+<section class="panel">
+  <header><h2>What things have cost you</h2><span class="note">tap to prefill</span></header>
+  <div class="body">
+    <div class="chips" id="presets" role="group" aria-label="Presets"></div>
+    <div class="hint">Median felt cost from your own log. Anything with one or two data points behind it is a guess, not a measurement. The count is on each chip.</div>
+  </div>
+</section>
+
+<!-- TAG ADMIN -->
+<section class="panel">
+  <header><h2>Your activity tags</h2><span class="note" id="tagadmin-note"></span></header>
+  <div class="body">
+    <div class="chips" id="tagadmin" role="group" aria-label="Tag admin"></div>
+    <div class="hint">Tap a tag to rename it. Renaming rewrites every entry that already carries it. Renaming onto a name that exists merges the two and ignores capitals, so "money out" folds back into "Money out" and the split cost history joins up again.</div>
+  </div>
+</section>
+
+<!-- CARRY CHAIN -->
+<section class="panel">
+  <header><h2>What each day handed the next</h2><span class="note" id="carry-stat"></span></header>
+  <div class="body">
+    <svg class="carrychain" id="carrychain" role="img" aria-labelledby="cc-title"></svg>
+    <div class="legend dark">
+      <span><i class="swatch" style="background:var(--nda-ink-secondary)"></i>spent</span>
+      <span><i class="swatch" style="background:var(--nda-semantic-error)"></i>over the ceiling</span>
+      <span><i class="swatch" style="background:var(--nda-identity-primary)"></i>spare, handed on</span>
+      <span><i class="swatch" style="background:var(--nda-ink-primary)"></i>ceiling tick</span>
+      <span><i class="swatch" style="background:var(--nda-canvas-container)"></i>ceiling inherited</span>
+      <span><i class="swatch" style="background:var(--nda-semantic-error)"></i>* untimed entries, bar reads low</span>
+    </div>
+    <div class="hint" id="carry-why"></div>
+  </div>
+</section>
+
+<!-- CALIBRATION -->
+<section class="panel">
+  <header><h2>Is the number matching your day?</h2><span class="note" id="cal-note"></span></header>
+  <div class="body">
+    <div class="row" style="margin-bottom:12px">
+      <label class="field" style="flex:1;min-width:180px"><span class="lab nano-label">What you actually had left, 0 to 10</span>
+        <select id="cal-energy"><option value="">pick</option></select></label>
+      <button id="btn-cal" class="btn btn-primary" style="align-self:flex-end">Save reading</button>
+    </div>
+    <div id="cal-stat" class="legend dark" style="margin-bottom:10px"></div>
+    <div id="cal-table" class="table-scroll"></div>
+    <div class="hint" id="cal-verdict"></div>
+  </div>
+</section>
+
+<!-- CONSTANTS -->
+<details class="constants">
+  <summary>Constants</summary>
+  <div class="body">
+    <div class="hint warnbox" style="margin-top:0">Collapsed by default on purpose. Clinical notes names the tracker-rumination loop as the main risk of a tool like this, and the assessment recommends reducing "just right" checking. Log for seven days before you move anything. A single day is not a signal.</div>
+
+    <h3 class="nano-label subhead">Budget</h3>
+    <div class="grid g4">
+      <label class="field"><span class="lab nano-label">Base budget</span><input type="number" id="s-budget" step="0.5"></label>
+      <label class="field"><span class="lab nano-label">Debt fraction</span><input type="number" id="s-carry" step="0.05"></label>
+      <label class="field"><span class="lab nano-label">Credit fraction</span><input type="number" id="s-carrycredit" step="0.05"></label>
+      <label class="field"><span class="lab nano-label">Sleep need (h)</span><input type="number" id="s-sleep" step="0.5"></label>
+      <label class="field"><span class="lab nano-label">Sleep penalty /h</span><input type="number" id="s-sleeppen" step="0.01"></label>
+      <label class="field"><span class="lab nano-label">Baseline HRV (ms)</span><input type="number" id="s-hrv"></label>
+    </div>
+    <div class="hint">Base budget is in <b>felt spoons</b>, the same unit as the buttons you tap. Default 7, which is the top of your own morning-estimate range. The old default of 12 told you that you had roughly double the capacity you report having.<br>
+    Sleep penalty defaults to 0.03 per hour short, down from 0.08. When sleep is intact but fatigue remains elevated, sleep should not be the heaviest penalty in the daily budget.<br>
+    Yesterday now carries in <b>both directions</b>. Debt fraction 0.3 means going 4 over yesterday costs you 1.2 today. Credit fraction 1.0 means every spoon you did not spend yesterday is added to today, uncapped, so today's budget can read well above the base of 7 after a quiet day. Set credit to 0 to go back to debt-only. Nothing is stored: both are recomputed from your raw entries on every load, so changing either number rewrites every day in the calibration table below.</div>
+    <div class="toggles" style="margin-top:11px">
+      <label class="toggle"><input type="checkbox" id="s-userhr"><span>Use resting HR in budget</span></label>
+      <label class="toggle"><input type="checkbox" id="s-usehrv"><span>Use HRV in budget</span></label>
+    </div>
+    <div class="hint">Both are off because a phone cannot measure either overnight, and a daytime resting-HR rise could be posture (your POTS toggle) or the blood-pressure question in your report rather than depletion.</div>
+
+    <h3 class="nano-label subhead">Medication correction</h3>
+    <div class="grid g4">
+      <label class="field"><span class="lab nano-label">Dose (mg)</span><input type="number" id="s-dose" step="10"></label>
+      <label class="field"><span class="lab nano-label">Peak offset (bpm)</span><input type="number" id="s-medpeak" step="0.5"></label>
+      <label class="field"><span class="lab nano-label">Peak at (h post-dose)</span><input type="number" id="s-medpeakh" step="0.5"></label>
+      <label class="field"><span class="lab nano-label">Active hours</span><input type="number" id="s-meddur" step="1"></label>
+    </div>
+    <div class="hint"><b id="s-medmean"></b><br>The correction is now a curve over time since dose, not a flat number, because the heart-rate effect lags the drug. Plasma d-amphetamine peaks around 3.8 hours, but the pulse increase peaks 8 to 12.5 hours post-dose. A correction that peaked at chemical Tmax would over-correct your mornings and under-correct your evenings, which is exactly backwards for a early morning dose and an afternoon dip.<br>
+    Defaults: 50 mg, peak 5.2 bpm at 10 hours, which puts the implied daily mean on the 4.2 bpm reported for 50 mg in Adler et al. 2009 (30 mg +2.8, 50 mg +4.2, 70 mg +5.2). The adult meta-analytic resting figure is +5.7 bpm (Mick et al. 2013). The old flat 8 bpm is only defensible as a late-day peak at 70 mg. Anchoring instead on the observed late-day peak (9.9 bpm at 70 mg, scaled to your dose) would put the peak nearer 8 and the mean nearer 6.5. The two anchors disagree and only your own washout data can settle which is right for you.
+    <span class="house">house rule</span> Magnitude for <em>you</em> needs a washout comparison of medicated against non-medicated days before it means anything.</div>
+
+    <h3 class="nano-label subhead">Computed cost</h3>
+    <div class="grid g4">
+      <label class="field"><span class="lab nano-label">Age</span><input type="number" id="s-age"></label>
+      <label class="field"><span class="lab nano-label">Baseline Resting HR</span><input type="number" id="s-rhr"></label>
+      <label class="field"><span class="lab nano-label">Body divisor K</span><input type="number" id="s-k" step="0.5"></label>
+      <label class="field"><span class="lab nano-label">Body exponent</span><input type="number" id="s-exp" step="0.1"></label>
+    </div>
+    <div class="grid g4" style="margin-top:11px">
+      <label class="field"><span class="lab nano-label">Head scale</span><input type="number" id="s-headscale" step="0.1"></label>
+      <label class="field"><span class="lab nano-label">Multiplier taper</span><input type="number" id="s-taper" step="0.05"></label>
+      <label class="field"><span class="lab nano-label">Multiplier cap</span><input type="number" id="s-multcap" step="0.1"></label>
+      <label class="field"><span class="lab nano-label">Suggested head scale</span><input type="text" id="s-headsugg" readonly></label>
+    </div>
+    <div class="hint"><span class="house">house rule</span> Percent of heart-rate reserve is validated against oxygen-uptake reserve for physical exertion only. There is no validated extension of it to cognitive or emotional load, cognitive load moves heart rate by single-digit bpm against tens for exercise, and no measured cardiovascular signature of masking exists. The head dial and the condition multipliers are constructs with a plausible rationale, not measurements. They are the honest part of this app as long as they are labelled.<br>
+    Multipliers no longer multiply out unchecked. They are sorted by size and each further one contributes a tapered share of its excess, then the total is capped. Four tags on a sample busy-day entry produced 2.53x under the old rule, inflating the computed figure above the felt scale.<br>
+    Suggested head scale is read off your own entries that carry both a felt cost and a computed one. It needs several paired entries before it means anything.</div>
+
+    <div class="row" style="margin-top:16px">
+      <button class="ghost btn btn-secondary btn-caps" id="btn-reset">Erase everything</button>
+    </div>
+  </div>
+</details>
+
+<!-- DATA -->
+<section class="panel">
+  <header><h2>Data</h2></header>
+  <div class="body">
+    <div class="row toolbar">
+      <button class="ghost btn btn-secondary btn-caps" id="btn-csv">Export CSV (Clinician)</button>
+      <button class="ghost btn btn-secondary btn-caps" id="btn-txt">Export medication log</button>
+      <button class="ghost btn btn-secondary btn-caps" id="btn-json">Backup (JSON)</button>
+      <button class="ghost btn btn-secondary btn-caps" id="btn-imp">Paste data in</button>
+    </div>
+    <div id="imp-box" hidden style="margin-top:12px">
+      <label class="field"><span class="lab nano-label">Paste a Medication CSV, a spoon-tracker CSV, or a ledger JSON backup</span>
+      <textarea id="imp-text" style="min-height:130px;font-family:var(--nda-font-mono);font-size:12px"></textarea></label>
+      <div class="row toolbar" style="margin-top:9px"><button id="imp-go" class="btn btn-primary">Import</button><span class="hint" id="imp-note" style="margin:0"></span></div>
+    </div>
+    <div class="hint">The CSV keeps the exact column order your earlier export used, with the computed columns appended after it, so nothing downstream breaks. The medication log is the readable format for a clinician.</div>
+  </div>
+</section>
+
+</div>
+
+<div id="view-all" hidden>
+  <section class="panel">
+    <header><h2>Everything logged</h2><span class="note" id="all-note"></span></header>
+    <div class="body" id="all-body"></div>
+  </section>
+</div>
+
+<div class="storagenote" id="storagenote">&nbsp;</div>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let SEED = { settings: {}, chips: [], options: {}, days: {}, migrations: [] };
+
+const KEY = 'spoonledger:state:v2';
+let mem = {}; 
+let MODE = 'cloud';
+let LASTGET = 'none';
+let WRITE_LOCK = null, RESCUE = null;
+let toastTimer = null;
+
+function makeTwoTap(el, defaultHtml, action, onArm) {
+  let armed = false;
+  let t = null;
+  el.onclick = (e) => {
+    e.preventDefault();
+    const getDef = () => (typeof el._defaultHtml === 'string' ? el._defaultHtml : (typeof defaultHtml === 'function' ? defaultHtml() : defaultHtml));
+    if (!armed) {
+      armed = true;
+      const originalClass = el.className;
+      el.dataset.origClass = originalClass;
+      let baseClass = originalClass.replace(/\bbtn-(ghost|secondary|primary)\b/g, '').replace(/\bdel\b/g, '').trim();
+      if (!/\bbtn\b/.test(baseClass)) baseClass += ' btn';
+      el.className = baseClass + ' is-armed';
+      el.innerHTML = 'Tap to confirm';
+      if (onArm) onArm();
+      t = setTimeout(() => {
+        armed = false;
+        el.className = el.dataset.origClass || originalClass;
+        el.innerHTML = getDef();
+      }, 3000);
+    } else {
+      clearTimeout(t);
+      armed = false;
+      el.className = el.dataset.origClass || originalClass;
+      el.innerHTML = getDef();
+      action();
+    }
+  };
+}
+
+function toast(msg){
+  const el = document.getElementById('toast');
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{
+    el.classList.remove('on');
+  }, 2400);
+}
+
+const safe = id => document.getElementById(id);
+const safeClick = (id, fn) => {
+  const el = document.getElementById(id);
+  if(el) el.onclick = fn;
+};
+const safeOn = (id, event, fn) => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener(event, fn);
+};
+
+const DEFAULT_CHIPS=[
+  'desk work','writing','admin','meeting','social',
+  'exercise','walk','cooking / meal','reading','commute','rest'
+];
+
+const store = {
+  queueTimer: null,
+  isSyncing: false,
+  conflictRev: null,
+  async get(k) {
+    LASTGET = 'cloud';
+    try {
+      if (window.dbStore) {
+        const val = await window.dbStore.get(k);
+        if (val != null) return val;
+      }
+      return localStorage.getItem(k);
+    } catch(e) {
+      console.warn('Storage get error, fallback to localStorage', e);
+      LASTGET = 'error';
+      return localStorage.getItem(k);
+    }
+  },
+  queue(k, v) {
+    try { localStorage.setItem(k, v); } catch(e) { console.error('Storage set error:', e); }
+    if (!window.dbStore || this.conflictRev !== null) return;
+    window.spoonSync = false;
+    noteStorage();
+    clearTimeout(this.queueTimer);
+    this.queueTimer = setTimeout(() => this.sync(k), 500);
+  },
+  async sync(k) {
+    if (this.isSyncing) {
+      this.queueTimer = setTimeout(() => this.sync(k), 2000);
+      return;
+    }
+    this.isSyncing = true;
+    const v = localStorage.getItem(k);
+    if (!v) { this.isSyncing = false; return; }
+    
+    let r;
+    try {
+      r = await window.dbStore.set(k, v);
+    } catch(e) {
+      console.warn('Sync error:', e);
+      r = { status: 500 };
+    }
+    this.isSyncing = false;
+    
+    if (r && r.status === 200) {
+      window.spoonSync = true;
+      noteStorage();
+    } else if (r && r.status === 409) {
+      this.conflictRev = r.data ? r.data.rev : 'unknown';
+      showConflictModal();
+    } else {
+      this.queueTimer = setTimeout(() => this.sync(k), 5000);
+    }
+  },
+  resolveConflict(choice) {
+    if (choice === 'reload') {
+      window.location.reload();
+    } else if (choice === 'overwrite') {
+      if (this.conflictRev !== null && this.conflictRev !== 'unknown') {
+        window.dbStore.updateRev(this.conflictRev);
+      }
+      this.conflictRev = null;
+      hideConflictModal();
+      this.sync(KEY);
+    }
+  }
+};
+
+function showConflictModal() {
+  WRITE_LOCK = 'conflict';
+  const el = document.getElementById('storagenote');
+  if(el){
+    el.className = 'storagenote warn';
+    el.innerHTML = '<b>CONFLICT:</b> Saved in another tab. <button class="btn btn-secondary btn-caps" onclick="store.resolveConflict(\'overwrite\')" style="margin-left:8px">Force overwrite</button> <button class="btn btn-secondary btn-caps" onclick="store.resolveConflict(\'reload\')">Discard local changes</button>';
+  }
+  const hSync = document.getElementById('header-sync');
+  if(hSync) {
+    hSync.style.color = 'var(--nda-semantic-error)';
+    hSync.textContent = '✕ conflict';
+  }
+  try { toast('Data conflict.'); } catch(e) {}
+}
+
+function hideConflictModal() {
+  WRITE_LOCK = null;
+  const el = document.getElementById('storagenote');
+  if(el) el.className = 'storagenote';
+}
+
+function lockWrites(why){
+  WRITE_LOCK = why;
+  const el = document.getElementById('storagenote');
+  if(el){
+    el.className = 'storagenote warn';
+    el.textContent = 'SAVING IS OFF. ' + why + '. Close and reopen before you log anything.';
+  }
+  const hSync = document.getElementById('header-sync');
+  if(hSync) {
+    hSync.style.color = 'var(--nda-semantic-error)';
+    hSync.textContent = '✕ saving off';
+  }
+  try { toast('Saving is off. Close and reopen.'); } catch(e) {}
+}
+
+function noteStorage(){
+  if (WRITE_LOCK === 'conflict') return;
+  const el = document.getElementById('storagenote');
+  if(el){
+    if (window.activeAlert) {
+      el.className = 'storagenote warn';
+      el.textContent = (window.spoonSync ? 'saved locally in browser' : (store.conflictRev !== null ? 'CONFLICT' : 'NOT SYNCING - queued offline')) + ' · ⚠ ' + (window.activeAlert.message || 'Governance Alert');
+    } else {
+      el.className = 'storagenote';
+      el.textContent = window.spoonSync ? 'saved locally in browser' : (store.conflictRev !== null ? 'CONFLICT' : 'NOT SYNCING - queued offline');
+    }
+  }
+  const hSync = document.getElementById('header-sync');
+  if(hSync) {
+    if (window.activeAlert) {
+      hSync.style.color = 'var(--nda-ink-secondary)';
+      hSync.textContent = '⚠ ' + (window.spoonSync ? 'governance alert' : 'offline (alert)');
+    } else {
+      hSync.style.color = '';
+      hSync.textContent = window.spoonSync ? '● saved locally' : '○ offline (queued)';
+    }
+  }
+}
+
+async function load(){
+  const s = await store.get(KEY);
+  if(s){
+    try {
+      const p = typeof s === 'string' ? JSON.parse(s) : s;
+      if(p.settings) S.settings = { ...DEFAULTS, ...p.settings };
+      if(p.chips && Array.isArray(p.chips) && p.chips.length > 0) {
+        S.chips = p.chips.slice();
+      } else if (!S.chips || S.chips.length === 0) {
+        S.chips = DEFAULT_CHIPS.slice();
+      }
+      if(p.options && typeof p.options === 'object') {
+        S.options = { ...p.options };
+      }
+      Object.keys(DEFAULT_OPTIONS).forEach(id => {
+        if(!S.options[id] || !Array.isArray(S.options[id]) || S.options[id].length === 0) {
+          S.options[id] = DEFAULT_OPTIONS[id].slice();
+        }
+      });
+      if(p.days && typeof p.days === 'object') {
+        S.days = { ...p.days };
+        Object.keys(S.days).forEach(k => {
+          const d = S.days[k];
+          if(d) {
+            d.entries = d.entries || [];
+            d.entries.forEach(e => {
+              if(e.kind === 'activity' && !e.allocation_tag) e.allocation_tag = 'revenue-touching';
+            });
+            d.dayTags = d.dayTags || {};
+          }
+        });
+      }
+      if(p.migrations && Array.isArray(p.migrations)) S.migrations = p.migrations.slice();
+    } catch(e) {
+      console.error('Error parsing loaded ledger state:', e);
+    }
+  } else {
+    if (!S.chips || S.chips.length === 0) S.chips = DEFAULT_CHIPS.slice();
+    Object.keys(DEFAULT_OPTIONS).forEach(id => {
+      if(!S.options[id] || S.options[id].length === 0) {
+        S.options[id] = DEFAULT_OPTIONS[id].slice();
+      }
+    });
+  }
+}
+
+function save(){
+  const payload = JSON.stringify(S);
+  RESCUE = payload;
+  try { localStorage.setItem(KEY, payload); } catch(e) { console.error('Local storage set error:', e); }
+  if(store.conflictRev !== null) {
+    noteStorage();
+    return;
+  }
+  store.queue(KEY, payload);
+}
+
+function pushEntry(e){
+  if(e.kind === 'activity' && !e.allocation_tag) e.allocation_tag = 'revenue-touching';
+  const targetDay = (e.occurredAt && e.occurredAt.length >= 10) ? e.occurredAt.slice(0, 10) : workKey();
+  const d = day(targetDay);
+  d.entries.push(e);
+  save();
+  renderAll();
+}
+
+const DEFAULTS={
+  age:44, rhr:58, hrv:45, sleepNeed:8, sleepPen:0.03,
+  budget:7, k:6, exp:1.3, carry:0.3, carryCredit:1.0,
+  doseMg:50, medPeak:5.2, medPeakH:10, medDurH:14,
+  headScale:1.0, taper:0.6, multCap:2.2, view:'log',
+  useRHR:false, useHRV:false
+};
+const ACT_TAGS=[
+  {id:'mask',label:'Masking / performing',m:1.35},
+  {id:'social',label:'Other people present',m:1.20},
+  {id:'sensory',label:'Loud, bright or busy',m:1.30},
+  {id:'novel',label:'Unfamiliar or unplanned',m:1.20},
+  {id:'admin',label:'Dreaded / avoided task',m:1.25},
+  {id:'flow',label:'Absorbing, wanted to',m:0.80}
+];
+const DAY_TAGS=[
+  {id:'meds',label:'Took the dose today',kind:'correct',note:'corrects HR on a curve'},
+  {id:'alcohol',label:'Drank last night',kind:'budget',m:0.85},
+  {id:'ill',label:'Ill or coming down',kind:'budget',m:0.70},
+  {id:'hot',label:'Hot day / dehydrated',kind:'budget',m:0.92},
+  {id:'pots',label:'Standing a lot / postural',kind:'correct',note:'ignores posture HR spikes'}
+];
+// Check-in domains asked today. `top` rows are always on the sheet; the rest
+// sit in the More fold.
+const DOMAINS=[
+  {id:'energy',label:'Energy right now',top:true},
+  {id:'focus',label:'Focus',top:true},{id:'mood',label:'Mood',top:true},
+  {id:'body',label:'Body'},{id:'sensory',label:'Sensory load'}
+];
+// Retired by the 2026-10 reshape. Never asked again, but old entries carry
+// them, so the ledger, the edit view and the export still show them.
+const RETIRED_DOMAINS=[
+  {id:'now',label:'Right now'},{id:'appetite',label:'Appetite'},{id:'wokeup',label:'Woke up at'}
+];
+const SHOWN_DOMAINS=DOMAINS.concat(RETIRED_DOMAINS);
+const DEFAULT_OPTIONS={
+  focus:['Locked in','Steady','Scattered','Foggy','Hyperfocus tunnel'],
+  mood:['Good','Level','Flat','Irritable','Low','On edge'],
+  energy:['Wired','Good','Fine','Fraying','Dipping','Running on fumes','Drained','Do not know'],
+  body:['Fine','Heart racing','Jaw tension','Headache','Dry mouth','Stomach off','Sweaty','Restless'],
+  sensory:['Quiet','Busy','Too much','Shutting down'],
+  wokeup:['Before 3am','Between 3 and 4','Between 4 and 5','Between 5 and 6','After 6am']
+};
+const MED_PHASES=['kicking in','peaking','steady','wearing off'];
+const LAST_ATE=['Just now','1 to 2 hours ago','3 to 4 hours ago','5 hours or more',"Can't remember"];
+const CHECKIN_RESHAPE='checkin-reshape-2026-10';
+
+let S={settings:{...DEFAULTS},chips:[],options:{},days:{},migrations:[]};
+
+const $=id=>document.getElementById(id);
+const pad=n=>(n<10?'0':'')+n;
+const round=(n,p=2)=>Math.round(n*Math.pow(10,p))/Math.pow(10,p);
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const localDate=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const localTime=d=>pad(d.getHours())+':'+pad(d.getMinutes());
+const iso=d=>localDate(d)+'T'+localTime(d);
+const todayKey=()=>localDate(new Date());
+
+let WORKDAY=null;
+let READY=false;
+const workKey=()=>WORKDAY||todayKey();
+const isBack=()=>!!WORKDAY&&WORKDAY!==todayKey();
+const stampNow=()=>isBack()?WORKDAY+'T'+localTime(new Date()):iso(new Date());
+const whenFor=id=>{const el=$(id);
+  return isBack()?(WORKDAY+'T'+((el&&el.value)||lastTimeOn(WORKDAY))):iso(new Date())};
+function blankDay(){return{morningEstimate:null,morningAt:'',morningLoggedAt:'',sleep:'',sleepQuality:null,rhr:'',hrv:'',dayTags:{},feltEnergy:'',entries:[]}}
+const dayRO=k=>{const d=S.days[k];if(!d)return blankDay();
+  if(!d.entries)d.entries=[];
+  d.entries.forEach(e=>{if(e.kind==='activity'&&!e.allocation_tag)e.allocation_tag='revenue-touching';});
+  if(!d.dayTags)d.dayTags={};return d};
+const dayName=k=>{const p=k.split('-').map(Number);
+  return new Date(p[0],p[1]-1,p[2]).toLocaleDateString(undefined,{weekday:'long'})};
+const dayLong=k=>{const p=k.split('-').map(Number);
+  return new Date(p[0],p[1]-1,p[2]).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})};
+const EPOCH='2020-01-01';
+function earliestKey(){
+  const ks=Object.keys(S.days).filter(k=>k>=EPOCH&&k<=todayKey()).sort();
+  const back=new Date();back.setDate(back.getDate()-60);
+  const b=localDate(back);return(ks.length&&ks[0]<b)?ks[0]:b}
+function lastTimeOn(k){let best=null;
+  ((S.days[k]||{}).entries||[]).forEach(e=>{
+    if(e.occurredAt&&!e.timeUnknown&&(!best||e.occurredAt>best))best=e.occurredAt});
+  return(best&&best.length>=16)?best.slice(11,16):'09:00'}
+function setWorkday(k){
+  if(k&&k>todayKey())k=todayKey();
+  if(k&&READY&&k<earliestKey()){
+    toast('That date is outside the ledger. Nothing changed.');renderDaybar();return}
+  WORKDAY=(k&&k!==todayKey())?k:null;
+  const st=$('sp-time'),ct=$('ci-time');if(st)st.value='';if(ct)ct.value='';
+  closeSheet();renderAll();
+  toast(isBack()?('Now logging into '+dayLong(WORKDAY)):'Back to today');
+}
+function syncWhenRows(){
+  const k=workKey();
+  [['sp-when','sp-time'],['ci-when','ci-time']].forEach(p=>{
+    const row=$(p[0]),inp=$(p[1]);if(!row)return;
+    row.hidden=!isBack();
+    if(isBack()&&!inp.value)inp.value=lastTimeOn(k)});
+}
+function renderDaybar(){
+  const bar=$('daybar');if(!bar)return;
+  const k=workKey(),back=isBack();
+  const di=$('daybar-date');di.max=todayKey();di.min=earliestKey();di.value=k;
+  bar.classList.toggle('back',back);
+  $('daybar-lab').textContent=back?('Logging into '+dayLong(k)+', not today'):'Logging today';
+  $('daybar-today').hidden=!back;
+  const nm=back?dayName(k):null;
+  const set=(id,t)=>{const el=$(id);if(el)el.textContent=t};
+  set('datestamp',dayLong(k));
+  set('lab-left',back?'left '+nm:'left today');
+  set('lab-entries',back?nm+"'s entries":"Today's entries");
+  set('lab-budget',back?"How "+nm+"'s budget was built":"How today's budget was built");
+  set('lab-state',back?nm+"'s starting state":"Today's starting state");
+  syncWhenRows();
+}
+const dayBefore=k=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()-1);return localDate(d)};
+const dayAfter=k=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+1);return localDate(d)};
+const uid=()=>'e'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+function day(k){if(!S.days[k])S.days[k]=blankDay();const d=S.days[k];
+  d.entries=d.entries||[];
+  d.entries.forEach(e=>{if(e.kind==='activity'&&!e.allocation_tag)e.allocation_tag='revenue-touching';});
+  d.dayTags=d.dayTags||{};return d}
+function combined(e){if(!e.activity)return e.label||'';return e.activity+(e.activity2?' + '+e.activity2:'')}
+
+const K_OUT=Math.LN2/11;
+function kInFor(tp){
+  let lo=K_OUT*1.05,hi=3,mid;
+  for(let i=0;i<60;i++){mid=(lo+hi)/2;
+    const t=Math.log(mid/K_OUT)/(mid-K_OUT);
+    if(t>tp)lo=mid;else hi=mid;}
+  return mid;
+}
+function medCurve(h){
+  const tp=S.settings.medPeakH||10, D=S.settings.medDurH||14;
+  const kin=kInFor(tp);
+  const g=t=>Math.exp(-K_OUT*t)-Math.exp(-kin*t);
+  const peak=g(tp);
+  if(h<=0||h>24||peak<=0)return 0;
+  let off=1;
+  if(h>D)off=h>=D+5?0:0.5*(1+Math.cos(Math.PI*(h-D)/5));
+  return clamp(g(h)/peak,0,1)*(S.settings.medPeak||0)*off;
+}
+function medDailyMean(){
+  let s=0,n=0;for(let h=0.5;h<=14;h+=0.5){s+=medCurve(h);n++}
+  return n?s/n:0;
+}
+function lastDose(before){
+  let best=null;
+  Object.keys(S.days).forEach(k=>(S.days[k].entries||[]).forEach(e=>{
+    if(e.kind!=='dose')return;
+    if(before&&e.occurredAt>before)return;
+    if(!best||e.occurredAt>best)best=e.occurredAt;
+  }));
+  return best;
+}
+function hoursSinceDose(at){
+  const d=lastDose(at);if(!d)return null;
+  const h=(new Date(at)-new Date(d))/3600000;
+  return (h<0||h>24)?null:h;
+}
+
+const HEAD_WEIGHT={1:0,2:0.25,3:0.5,4:1.0,5:1.6};
+function multiplier(tags){
+  const st=S.settings;
+  const up=ACT_TAGS.filter(t=>tags[t.id]&&t.m>1).map(t=>t.m-1).sort((a,b)=>b-a);
+  let m=1;up.forEach((x,i)=>{m+=x*Math.pow(st.taper,i)});
+  m=Math.min(m,st.multCap);
+  ACT_TAGS.filter(t=>tags[t.id]&&t.m<1).forEach(t=>{m*=t.m});
+  return m;
+}
+function activityCost({hr,dur,dial,tags,at}){
+  const st=S.settings;
+  const hrMax=208-0.7*st.age;
+  const h=hoursSinceDose(at||iso(new Date()));
+  const medOn=day((at||iso(new Date())).slice(0,10)).dayTags.meds;
+  const offset=(medOn&&h!==null)?medCurve(h):(medOn?medDailyMean():0);
+  const effHR=hr-offset;
+  const reserve=clamp((effHR-st.rhr)/(hrMax-st.rhr),0,1);
+  const bodyCost=Math.pow(reserve,st.exp)*dur/st.k;
+  const headCost=(HEAD_WEIGHT[dial]||0)*(dur/60)*0.4*st.headScale;
+  const mult=multiplier(tags);
+  return{total:(bodyCost+headCost)*mult,bodyCost,headCost,mult,reserve,effHR,offset,hoursSince:h};
+}
+function entryCost(e){
+  if(e.felt!==null&&e.felt!==undefined)return e.felt;
+  if(e.hr&&e.dur)return round(activityCost({hr:e.hr,dur:e.dur,dial:e.dial||3,tags:e.condTags||{},at:e.occurredAt}).total,2);
+  return 0;
+}
+function computedFor(e){
+  if(!e.hr||!e.dur)return null;
+  return round(activityCost({hr:e.hr,dur:e.dur,dial:e.dial||3,tags:e.condTags||{},at:e.occurredAt}).total,2);
+}
+function spentOn(k){const d=S.days[k];if(!d||!d.entries)return 0;
+  return round(d.entries.reduce((a,e)=>a+((e.kind==='activity'&&!e.timeUnknown)?entryCost(e):0),0),2)}
+
+function rawBudget(k){
+  const st=S.settings,d=S.days[k];
+  let b=(d&&d.morningEstimate!=null)?Math.max(st.budget*0.4,d.morningEstimate):st.budget;
+  if(!d)return b;
+  const sleep=parseFloat(d.sleep);
+  if(!isNaN(sleep))b*=Math.max(0.85,1-st.sleepPen*Math.max(0,st.sleepNeed-sleep));
+  const rhr=parseFloat(d.rhr);
+  if(st.useRHR&&!isNaN(rhr)&&!d.dayTags.meds)b*=Math.max(0.5,1-0.05*Math.max(0,rhr-st.rhr));
+  const hrv=parseFloat(d.hrv);
+  if(st.useHRV&&!isNaN(hrv)&&!d.dayTags.meds&&st.hrv>0)b*=clamp(1+0.5*((hrv-st.hrv)/st.hrv),0.6,1.2);
+  DAY_TAGS.filter(t=>t.kind==='budget').forEach(t=>{if(d.dayTags[t.id])b*=t.m});
+  return Math.max(0.5,b);
+}
+function handoff(pk){
+  const prev=S.days[pk];
+  if(!prev||!prev.entries.length)return 0;
+  const diff=rawBudget(pk)-spentOn(pk);
+  return diff<0 ? -round(-diff*S.settings.carry,1)
+                :  round(diff*S.settings.carryCredit,1);
+}
+function carryOver(k){return handoff(dayBefore(k))}
+function dayBudget(k){
+  const st=S.settings,d=dayRO(k);let b=st.budget,notes=[];
+  if(d.morningEstimate!=null){b=Math.max(st.budget*0.4,d.morningEstimate);
+    notes.push('your own morning estimate of '+d.morningEstimate)}
+  else notes.push('base of '+st.budget+', no morning estimate logged');
+  const sleep=parseFloat(d.sleep);
+  if(!isNaN(sleep)){const short=Math.max(0,st.sleepNeed-sleep);
+    if(short>0){b*=Math.max(0.85,1-st.sleepPen*short);notes.push(short.toFixed(1)+'h short on sleep, lightly weighted')}}
+  const rhr=parseFloat(d.rhr);
+  if(st.useRHR&&!isNaN(rhr)&&!d.dayTags.meds){const over=Math.max(0,rhr-st.rhr);
+    if(over>0){b*=Math.max(0.5,1-0.05*over);notes.push('resting HR '+over+' over baseline')}}
+  else if(!isNaN(rhr))notes.push('resting HR recorded, not used');
+  const hrv=parseFloat(d.hrv);
+  if(st.useHRV&&!isNaN(hrv)&&!d.dayTags.meds&&st.hrv>0){
+    b*=clamp(1+0.5*((hrv-st.hrv)/st.hrv),0.6,1.2);notes.push('HRV against baseline')}
+  else if(!isNaN(hrv))notes.push('HRV recorded, not used');
+  DAY_TAGS.filter(t=>t.kind==='budget').forEach(t=>{if(d.dayTags[t.id]){b*=t.m;notes.push(t.label.toLowerCase())}});
+  const carry=carryOver(k);b+=carry;
+  if(carry<0)notes.push(round(-carry,1)+" carried over from yesterday's overspend");
+  else if(carry>0)notes.push(round(carry,1)+' spare carried forward from yesterday');
+  return{budget:Math.max(0.5,round(b,1)),notes,carry};
+}
+
+function renderBalance(){
+  const k=workKey(),d=dayRO(k);
+  const{budget,notes,carry}=dayBudget(k);
+  const spent=spentOn(k),left=round(budget-spent,1);
+  $('budget-line').textContent='of '+budget.toFixed(1);
+  $('spent').textContent=spent.toFixed(1);
+  $('count').textContent=d.entries.length;
+  $('day-carry').value=carry<0?'-'+round(-carry,1)+' spoons overspent'
+    :carry>0?'+'+round(carry,1)+' spoons spare':'nothing';
+  const el=$('remaining');el.textContent=left.toFixed(1);
+  el.className='bignum'+(left<0?' over':left<budget*0.25?' warn':'');
+  if(isBack()){
+    const dz=(d.entries||[]).filter(x=>x.kind==='dose').sort((a,b)=>(a.occurredAt||'')<(b.occurredAt||'')?-1:1)[0];
+    $('sincedose').textContent=dz&&dz.occurredAt?('taken '+dz.occurredAt.slice(11,16)):'no dose logged';
+  }else{
+    const h=hoursSinceDose(iso(new Date()));
+    $('sincedose').textContent=h===null?'no dose logged':h.toFixed(1)+'h · correcting '+medCurve(h).toFixed(1)+' bpm';
+  }
+  const total=Math.ceil(budget),over=Math.max(0,Math.ceil(spent-budget));let html='';
+  for(let i=0;i<total;i++){const f=clamp(spent-i,0,1);
+    html+='<div class="notch '+(i>=total*0.75?'warn':'')+'"><div class="fill" style="transform:scaleY('+f+')"></div></div>'}
+  for(let i=0;i<over;i++){const f=clamp(spent-budget-i,0,1);
+    html+='<div class="notch over"><div class="fill" style="transform:scaleY('+f+')"></div></div>'}
+  $('notches').innerHTML=html;
+  $('budget-why').textContent='Built from: '+notes.join('; ')+'. This is information about the day, not a rule about what you are allowed to do.';
+  return budget;
+}
+
+function renderTimeline(){
+  const W=960,H=112,L=34,R=12,T=16,B=26,PW=W-L-R,PH=H-T-B;
+  const x=h=>L+(h/24)*PW;
+  let s='';
+  s+='<rect x="'+x(14)+'" y="'+T+'" width="'+(x(16)-x(14))+'" height="'+PH+'" fill="var(--nda-ui-lines)"/>';
+  s+='<line x1="'+L+'" y1="'+(T+PH)+'" x2="'+(W-R)+'" y2="'+(T+PH)+'" stroke="var(--nda-ink-primary)" stroke-width="1"/>';
+  for(let h=0;h<=24;h+=3){
+    s+='<line x1="'+x(h)+'" y1="'+T+'" x2="'+x(h)+'" y2="'+(T+PH)+'" stroke="var(--nda-canvas-primary)" stroke-width="1"/>';
+    s+='<text class="tl-axis" x="'+x(h)+'" y="'+(H-8)+'" text-anchor="middle">'+pad(h)+':00</text>';
+  }
+  const keys=Object.keys(S.days).sort().filter(k=>
+    (S.days[k].entries||[]).length||S.days[k].morningEstimate!=null);
+  const rows=keys.length||1;
+  const rowH=PH/Math.max(rows,1);
+  keys.forEach((k,i)=>{
+    const y=T+rowH*i+rowH/2;
+    s+='<text class="tl-axis" x="4" y="'+(y+3)+'">'+k.slice(5)+'</text>';
+    (S.days[k].entries||[]).forEach(e=>{
+      if(e.timeUnknown)return;
+      const t=(e.occurredAt||'').slice(11,16);if(!t)return;
+      const hh=parseInt(t.slice(0,2),10)+parseInt(t.slice(3,5),10)/60;
+      const px=x(hh);
+      if(e.kind==='zero'){
+        s+='<polygon points="'+(px-5)+','+(y-6)+' '+(px+5)+','+(y-6)+' '+px+','+(y+5)+'" fill="var(--nda-semantic-error)" stroke="var(--nda-canvas-container)" stroke-width="2"><title>crash '+t+' '+k+'</title></polygon>';
+      }else if(e.kind==='dose'){
+        s+='<circle cx="'+px+'" cy="'+y+'" r="5" fill="var(--nda-identity-primary)" stroke="var(--nda-canvas-container)" stroke-width="2"><title>dose '+t+' '+k+'</title></circle>';
+      }else if(e.kind==='activity'){
+        const c=entryCost(e),hgt=clamp(3+c*2.4,3,rowH*0.8);
+        s+='<rect x="'+(px-1.5)+'" y="'+(y-hgt/2)+'" width="3" height="'+hgt+'" fill="var(--nda-ink-secondary)"><title>'+(combined(e)||'spend')+' '+c+' spoons '+t+'</title></rect>';
+      }
+    });
+  });
+  $('timeline').innerHTML='<title id="tl-title">Clock-time of crashes, doses and logged activity across all recorded days</title>'+s;
+
+  const crashes=[];
+  Object.keys(S.days).forEach(k=>(S.days[k].entries||[]).forEach(e=>{
+    if(e.kind==='zero'&&!e.timeUnknown&&e.occurredAt&&e.occurredAt.length>12)crashes.push(e.occurredAt.slice(11,16))}));
+  const band=crashes.filter(t=>t>='14:00'&&t<'16:00').length;
+  $('timeline-stat').textContent=crashes.length?crashes.length+' crashes recorded':'no crashes recorded';
+  $('dip-why').textContent=crashes.length
+    ? band+' of your '+crashes.length+' zero-spoon events fall between 14:00 and 16:00'
+      +(crashes.length?' ('+crashes.sort().join(', ')+'). ':'. ')
+      +'Your integrated report independently notes a consistent afternoon decline, and the pulse effect of a morning dose peaks 8 to 12.5 hours later. Log dose times and this panel tells you whether your crash tracks the drug curve or the day.'
+    : 'Nothing to show yet. Tap Zero when the day gives out and this fills in.';
+}
+
+const expandedTags=new Set();
+// What a check-in says, under the labels it was asked with. Retired fields
+// keep their old labels so old entries read the same as they always did.
+function checkinParts(e){
+  const parts=[];
+  if(e.domains){
+    const s=SHOWN_DOMAINS.filter(dm=>e.domains[dm.id]&&e.domains[dm.id].length)
+      .map(dm=>dm.label+': '+e.domains[dm.id].join(', ')).join(' · ');
+    if(s)parts.push(s);
+  }
+  if(e.lastAte)parts.push('Last ate: '+e.lastAte);
+  if(e.fedState)parts.push('Fed: '+e.fedState);
+  if(e.medPhase)parts.push('Meds: '+e.medPhase+(e.medPhaseGuessed?' (guessed)':''));
+  return parts;
+}
+function firstDoseOn(k){
+  const d=S.days[k];if(!d)return null;
+  return (d.entries||[]).filter(x=>x.kind==='dose'&&x.occurredAt)
+    .map(x=>x.occurredAt).sort()[0]||null;
+}
+// A guessed medication phase for a check-in at `when` on day `k`. the user's own
+// past answers win when there are at least three at the same whole hour after
+// the first dose; guessed phases are never counted, or guesses would learn
+// from guesses.
+function guessMedPhase(k,when){
+  const fd=firstDoseOn(k);if(!fd)return null;
+  const ms=new Date(when)-new Date(fd);
+  if(isNaN(ms)||ms<0)return null;
+  const hrs=ms/3600000,hour=Math.floor(hrs);
+  const tally={};let n=0;
+  Object.keys(S.days).forEach(dk=>{
+    const f=firstDoseOn(dk);if(!f)return;
+    (S.days[dk].entries||[]).forEach(e=>{
+      if(e.kind!=='checkin'||e.medPhaseGuessed||MED_PHASES.indexOf(e.medPhase)===-1)return;
+      const h=(new Date(e.occurredAt)-new Date(f))/3600000;
+      if(isNaN(h)||h<0||Math.floor(h)!==hour)return;
+      tally[e.medPhase]=(tally[e.medPhase]||0)+1;n++})});
+  if(n>=3){
+    const phase=MED_PHASES.reduce((a,b)=>(tally[b]||0)>(tally[a]||0)?b:a);
+    return {phase:phase,why:'Guessed from your own past check-ins'};
+  }
+  const phase=hrs<1.5?'kicking in':hrs<5?'peaking':hrs<9?'steady':'wearing off';
+  const mins=Math.round(ms/60000);
+  return {phase:phase,why:'Guessed from '+Math.floor(mins/60)+'h '+(mins%60)+'m since your dose'};
+}
+// One-off reshape of stored check-in data. Adds, never removes: "Right now"
+// options join the end of Energy, and each day's earliest check-in wake time
+// is copied onto the day for the Sleep sheet. The check-ins keep theirs.
+// A fresh state has no stored "Right now" list, so Energy keeps its default.
+function migrateCheckinReshape(){
+  if(S.migrations.indexOf(CHECKIN_RESHAPE)>-1)return;
+  const en=(S.options.energy||[]).slice();
+  (S.options.now||[]).forEach(o=>{if(en.indexOf(o)===-1)en.push(o)});
+  if(en.length)S.options.energy=en;
+  Object.keys(S.days).forEach(k=>{
+    const d=S.days[k];if(!d||d.wokeUp)return;
+    const src=(d.entries||[]).filter(e=>e.kind==='checkin'&&e.domains&&Array.isArray(e.domains.wokeup)&&e.domains.wokeup.length)
+      .sort((a,b)=>(a.occurredAt||'')<(b.occurredAt||'')?-1:1)[0];
+    if(src)d.wokeUp=src.domains.wokeup[0];
+  });
+  S.migrations.push(CHECKIN_RESHAPE);
+}
+function renderLedger(){
+  const k=workKey(),d=dayRO(k),host=$('ledger-body');
+  if(!d.entries||!d.entries.length){host.innerHTML='<div class="empty is-center">Nothing logged yet on '+(isBack()?dayName(k):'today')+'.</div>';return}
+  host.innerHTML='';
+  d.entries.slice().sort((a,b)=>(a.occurredAt||'')<(b.occurredAt||'')?1:-1).forEach(e=>{
+    const row=document.createElement('div');row.className='entry';
+    const head=document.createElement('div');head.className='head';
+    const tag=document.createElement('span');
+    tag.className='tag '+e.kind;
+    tag.textContent=e.kind==='zero'?'zero spoons'
+      :e.kind==='dose'?'dose'
+      :e.kind==='skip'?'dose skipped'
+      :e.kind==='checkin'?'check-in'
+      :(e.felt!=null?e.felt+' spoon'+(e.felt===1?'':'s'):'spoons: ?');
+    head.appendChild(tag);
+    if(e.kind==='activity'){
+      const atVal = e.allocation_tag || 'revenue-touching';
+      const atTag = document.createElement('span');
+      atTag.className = 'tag alloc-' + atVal;
+      atTag.textContent = atVal;
+      head.appendChild(atTag);
+    }
+    if(e.label||combined(e)){const t=document.createElement('span');
+      t.textContent=e.label||combined(e);head.appendChild(t)}
+    const c=computedFor(e);
+    if(c!=null){const t=document.createElement('span');t.className='tag';
+      t.textContent='computed '+c.toFixed(2);head.appendChild(t)}
+    if(e.timeUnknown){const t=document.createElement('span');t.className='tag zero';t.textContent='needs a time';
+      t.title='Not counted in today\u2019s spend until you set when it happened';head.appendChild(t)}
+    if(e.src){const t=document.createElement('span');t.className='tag src';t.textContent=e.src;head.appendChild(t)}
+    const di=document.createElement('input');di.type='date';di.value=(e.occurredAt||'').slice(0,10);
+    const ti=document.createElement('input');ti.type='time';ti.value=(e.occurredAt||'').slice(11,16);
+    const upd=()=>{if(di.value&&ti.value){
+      const old=(e.occurredAt||'').slice(0,10);e.occurredAt=di.value+'T'+ti.value;e.timeUnknown=false;
+      if(di.value!==old){const arr=day(old).entries;const i=arr.indexOf(e);if(i>-1)arr.splice(i,1);day(di.value).entries.push(e)}
+      save();renderAll()}};
+    di.onchange=upd;ti.onchange=upd;
+    head.appendChild(di);head.appendChild(ti);
+    const del=document.createElement('button');
+    del.className='btn btn-ghost btn-caps';
+    del.style.marginLeft='auto';
+    del.innerHTML='✕';
+    del.title='Remove';
+    makeTwoTap(del, '✕', ()=>{d.entries=d.entries.filter(x=>x.id!==e.id);save();renderAll()});
+    head.appendChild(del);row.appendChild(head);
+
+    if(e.kind==='activity'){
+      const cr=document.createElement('div');cr.className='costrow';
+      const cl=document.createElement('span');cl.className='costlab';cl.textContent='felt';cr.appendChild(cl);
+      for(let v=0;v<=10;v++){(function(val){
+        const b=document.createElement('button');
+        const whole=(e.felt!=null)?Math.floor(e.felt):null;
+        b.className='cost-btn'+(whole===val?' on':'');b.textContent=val;
+        b.onclick=()=>{const half=(e.felt!=null&&e.felt%1===0.5)?0.5:0;
+          e.felt=(e.felt===val+half)?null:val+half;save();renderAll()};
+        cr.appendChild(b)})(v)}
+      const hb=document.createElement('button');
+      hb.className='cost-btn'+((e.felt!=null&&e.felt%1===0.5)?' on':'');hb.textContent='+½';
+      hb.onclick=()=>{if(e.felt==null)e.felt=0.5;else if(e.felt%1===0.5)e.felt-=0.5;else e.felt+=0.5;save();renderAll()};
+      cr.appendChild(hb);row.appendChild(cr);
+    }
+    if(e.kind==='activity'||e.kind==='zero'){
+      const open=expandedTags.has(e.id);
+      const line=document.createElement('div');line.className='tagline';
+      const cur=combined(e);
+      line.innerHTML=(cur?'<b>'+cur+'</b> ':'<span>no tag</span> ')+'<span class="more">'+(open?'done':'tag')+'</span>';
+      line.onclick=()=>{open?expandedTags.delete(e.id):expandedTags.add(e.id);renderLedger()};
+      row.appendChild(line);
+    }
+    if((e.kind==='activity'||e.kind==='zero')&&expandedTags.has(e.id)){
+      const ch=document.createElement('div');ch.className='chips';ch.setAttribute('role','group');ch.setAttribute('aria-label','Tags');
+      S.chips.forEach(c=>{
+        const b=document.createElement('button');b.type='button';
+        const isA1=e.activity===c,isA2=e.activity2===c;
+        b.className='chip'+(isA1?' on':isA2?' on2':'');
+        b.setAttribute('aria-pressed',(isA1||isA2)?'true':'false');
+        b.textContent=c;b.title='First tap is the main activity, a second chip is the detail tag';
+        b.onclick=()=>{
+          if(e.activity===c){e.activity=e.activity2||null;e.activity2=null}
+          else if(e.activity2===c){e.activity2=null}
+          else if(!e.activity){e.activity=c}
+          else{e.activity2=c}
+          save();renderAll()};
+        ch.appendChild(b)});
+      row.appendChild(ch);
+    }
+    if(e.kind==='checkin'){
+      const p=document.createElement('div');p.className='hint';
+      const parts = checkinParts(e);
+      if (e.note) parts.push('— ' + e.note);
+      p.textContent = parts.join(' · ');
+      row.appendChild(p);
+    }
+    host.appendChild(row);
+  });
+}
+
+function presetTable(){
+  const m={};
+  Object.keys(S.days).forEach(k=>(S.days[k].entries||[]).forEach(e=>{
+    if(e.kind!=='activity'||e.felt==null||!e.activity)return;
+    const key=combined(e);(m[key]=m[key]||[]).push(e.felt)}));
+  return Object.keys(m).map(k=>{
+    const v=m[k].slice().sort((a,b)=>a-b);
+    const med=v.length%2?v[(v.length-1)/2]:(v[v.length/2-1]+v[v.length/2])/2;
+    return{key:k,med:round(med,2),n:v.length}}).sort((a,b)=>b.n-a.n||b.med-a.med);
+}
+function renderPresets(){
+  const host=$('presets');host.innerHTML='';
+  presetTable().slice(0,26).forEach(p=>{
+    const b=document.createElement('button');b.className='preset';
+    b.innerHTML='<span>'+p.key+'</span><b>'+p.med+'</b><span class="n">n'+p.n+'</span>';
+    b.onclick=()=>{
+      openPanel('p-spend');
+      const parts=p.key.split(' + ');
+      draft.activity=parts[0]||null;draft.activity2=parts[1]||null;draft.felt=p.med;
+      renderSpendForm();toast('Prefilled '+p.key)};
+    host.appendChild(b)});
+  if(!host.children.length)host.innerHTML='<div class="empty is-center">No tagged spends yet.</div>';
+}
+function pearson(xs,ys){const n=xs.length;if(n<3)return null;
+  const mx=xs.reduce((a,b)=>a+b,0)/n,my=ys.reduce((a,b)=>a+b,0)/n;
+  let num=0,dx=0,dy=0;for(let i=0;i<n;i++){const a=xs[i]-mx,b=ys[i]-my;num+=a*b;dx+=a*a;dy+=b*b}
+  if(!dx||!dy)return null;return num/Math.sqrt(dx*dy)}
+
+function renderCarryChain(){
+  const svg=$('carrychain');if(!svg)return;
+  const TITLE='<title id="cc-title">One row per day: what you spent against your ceiling, and the spare or overspend passed to the next day</title>';
+  const all=Object.keys(S.days).filter(k=>(S.days[k].entries||[]).length).sort();
+  const keys=all.slice(-21);
+  if(keys.length<2){
+    svg.setAttribute('viewBox','0 0 900 54');
+    svg.innerHTML=TITLE+'<text class="cc-num" x="6" y="32">Two logged days and this starts drawing the handoff.</text>';
+    $('carry-stat').textContent=all.length+' logged';$('carry-why').textContent='';return;
+  }
+  const rows=keys.map(k=>{
+    const inC=carryOver(k),raw=rawBudget(k);
+    return{k,inC,raw:round(raw,1),ceil:Math.max(0.5,round(raw+inC,1)),spent:spentOn(k),out:handoff(k),
+      untimed:(S.days[k].entries||[]).filter(e=>e.kind==='activity'&&e.timeUnknown).length};
+  });
+  const XMAX=Math.max(1,...rows.map(r=>Math.max(r.ceil,r.raw,r.spent)))*1.04;
+  const W=900,GUT=60,L=112,RN=104,T=16,ROW=26,B=24,H=T+rows.length*ROW+B;
+  const PW=W-L-RN,x=v=>L+(v/XMAX)*PW,yOf=i=>T+i*ROW+ROW/2;
+  let s='',step=XMAX>16?5:XMAX>8?2:1;
+  for(let v=0;v<=XMAX;v+=step){
+    s+='<line x1="'+x(v)+'" y1="'+T+'" x2="'+x(v)+'" y2="'+(T+rows.length*ROW)+'" stroke="var(--nda-ui-lines)" stroke-width="1"/>';
+    s+='<text class="cc-num" x="'+x(v)+'" y="'+(H-8)+'" text-anchor="middle">'+v+'</text>';
+  }
+  s+='<text class="cc-num" x="'+(W-6)+'" y="'+(H-8)+'" text-anchor="end">spoons</text>';
+  s+='<text class="cc-num" x="'+GUT+'" y="'+(H-8)+'" text-anchor="middle">handed on</text>';
+  rows.forEach((r,i)=>{
+    const y=yOf(i);
+    s+='<text class="cc-day" x="4" y="'+(y+4)+'">'+r.k.slice(5)+'</text>';
+    s+='<line x1="'+x(0)+'" y1="'+y+'" x2="'+x(r.ceil)+'" y2="'+y+'" stroke="var(--nda-ui-lines)" stroke-width="1"/>';
+    if(r.inC>0)s+='<rect x="'+x(r.raw)+'" y="'+(y-6)+'" width="'+(x(r.ceil)-x(r.raw))+'" height="12" fill="var(--nda-identity-primary)" opacity="0.18"/>';
+    if(r.inC<0)s+='<rect x="'+x(r.ceil)+'" y="'+(y-6)+'" width="'+(x(r.raw)-x(r.ceil))+'" height="12" fill="none" stroke="var(--nda-semantic-error)" stroke-width="1" stroke-dasharray="2 3" opacity="0.75"/>';
+    const to=Math.min(r.spent,r.ceil);
+    if(to>0)s+='<rect x="'+x(0)+'" y="'+(y-6)+'" width="'+(x(to)-x(0))+'" height="12" fill="var(--nda-ink-secondary)"/>';
+    if(r.spent>r.ceil)s+='<rect x="'+x(r.ceil)+'" y="'+(y-6)+'" width="'+(x(r.spent)-x(r.ceil))+'" height="12" fill="var(--nda-semantic-error)"/>';
+    s+='<line x1="'+x(r.ceil)+'" y1="'+(y-9)+'" x2="'+x(r.ceil)+'" y2="'+(y+9)+'" stroke="var(--nda-ink-primary)" stroke-width="1.5"/>';
+    if(r.untimed)s+='<text class="cc-num" x="'+(W-RN+2)+'" y="'+(y+4)+'" fill="var(--nda-semantic-error)">*</text>';
+    s+='<text class="cc-num" x="'+(W-6)+'" y="'+(y+4)+'" text-anchor="end">'+r.spent.toFixed(1)+' of '+r.ceil.toFixed(1)+'</text>';
+    const nx=rows[i+1];if(!nx)return;
+    const yA=y+9,yB=yOf(i+1)-9;
+    if(dayAfter(r.k)!==nx.k){
+      s+='<line x1="'+GUT+'" y1="'+yA+'" x2="'+GUT+'" y2="'+yB+'" stroke="var(--nda-ui-lines)" stroke-width="1" stroke-dasharray="2 3"/>';
+      s+='<text class="cc-num" x="'+(GUT+7)+'" y="'+((yA+yB)/2+4)+'">gap</text>';return;
+    }
+    const col=r.out>0?'var(--nda-identity-primary)':r.out<0?'var(--nda-semantic-error)':'var(--nda-ink-primary)';
+    s+='<line x1="'+GUT+'" y1="'+yA+'" x2="'+GUT+'" y2="'+(yB-4)+'" stroke="'+col+'" stroke-width="'+(r.out?1.8:1)+'"/>';
+    s+='<path d="M'+(GUT-3.5)+' '+(yB-4)+' L'+(GUT+3.5)+' '+(yB-4)+' L'+GUT+' '+yB+' Z" fill="'+col+'"/>';
+    s+='<text class="cc-num" x="'+(GUT+7)+'" y="'+((yA+yB)/2+4)+'" fill="'+col+'">'+(r.out>0?'+':'')+r.out.toFixed(1)+'</text>';
+  });
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.innerHTML=TITLE+s;
+  const up=rows.filter(r=>r.out>0).length,down=rows.filter(r=>r.out<0).length;
+  const ut=rows.filter(r=>r.untimed).length;
+  $('carry-stat').textContent=rows.length+' days'+(all.length>rows.length?' of '+all.length:'')
+    +' \u00b7 '+up+' handed spare on, '+down+' handed debt on'+(ut?' \u00b7 '+ut+' understated':'');
+  $('carry-why').innerHTML='Each row is a day. The filled bar is what you spent, the upright tick is your ceiling for that day, '
+    +'and anything past the tick is overspend. The column on the left is the chain: each arrow is what that day handed the next, '
+    +'<b style="color:var(--nda-identity-primary)">green</b> for spare at credit fraction '+S.settings.carryCredit
+    +', <b style="color:var(--nda-semantic-error)">red</b> for overspend at debt fraction '+S.settings.carry
+    +'. A pale green block on the end of a bar is ceiling you inherited; a dashed outline past the tick is ceiling the day before took away. '
+    +'A dashed arrow marked gap means the rows are not consecutive days, so nothing crossed. '
+    +'A red asterisk means the day holds entries with no time set, which are not counted as spend, so that bar reads lower than the day actually was.';
+}
+
+function renderCalibration(){
+  const sel=$('cal-energy');
+  if(sel && (!sel.options || sel.options.length<3)){for(let i=0;i<=10;i++){const o=document.createElement('option');o.value=i;o.textContent=i;sel.appendChild(o)}}
+  if(sel) sel.value=dayRO(workKey()).feltEnergy||'';
+  const keys=Object.keys(S.days).filter(k=>S.days[k].feltEnergy!==''&&S.days[k].feltEnergy!=null&&(S.days[k].entries||[]).length).sort().reverse();
+  if(!keys.length){$('cal-stat').innerHTML='<span>No end-of-day readings yet.</span>';
+    $('cal-table').innerHTML='<div class="empty is-center">Save one and this starts comparing what the budget predicted against what you actually had left.</div>';
+    $('cal-verdict').textContent='';return}
+  const pred=[],act=[];
+  const rows=keys.slice(0,21).map(k=>{
+    const c=carryOver(k),b=Math.max(0.5,round(rawBudget(k)+c,1)),spent=spentOn(k);
+    const p=clamp(1+((b-spent)/b)*9,0,10);pred.push(p);act.push(parseFloat(S.days[k].feltEnergy));
+    const gap=parseFloat(S.days[k].feltEnergy)-p;
+    const cc=c<0?'var(--nda-semantic-error)':c>0?'var(--nda-identity-primary)':'var(--nda-ink-secondary)';
+    return'<tr><td>'+k+'</td><td class="num" style="color:'+cc+'">'+(c>0?'+':'')+c.toFixed(1)+'</td>'
+      +'<td class="num">'+b.toFixed(1)+'</td><td class="num">'+spent.toFixed(1)
+      +'</td><td class="num">'+p.toFixed(1)+'</td><td class="num"><b>'+S.days[k].feltEnergy+'</b></td>'
+      +'<td class="num" style="color:'+(Math.abs(gap)>2?'var(--nda-semantic-error)':'var(--nda-ink-secondary)')+'">'+(gap>0?'+':'')+gap.toFixed(1)+'</td></tr>'}).join('');
+  $('cal-table').innerHTML='<table><thead><tr><th>Day</th><th class="num">Carried</th><th class="num">Budget</th><th class="num">Spent</th>'
+    +'<th class="num">Predicted</th><th class="num">Felt</th><th class="num">Gap</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  const r=pearson(pred,act),bias=act.reduce((a,b,i)=>a+(b-pred[i]),0)/act.length;
+  $('cal-stat').innerHTML='<span>days paired <b>'+keys.length+'</b></span><span>correlation <b>'
+    +(r===null?'—':r.toFixed(2))+'</b></span><span>average gap <b>'+(bias>0?'+':'')+bias.toFixed(1)+'</b></span>';
+  $('cal-note').textContent=keys.length<7?'under 7 days, not readable yet':keys.length+' days paired';
+  $('cal-verdict').textContent=keys.length<7
+    ? 'Fewer than seven paired days. Clinical notes is explicit that a sustained multi-day departure is the unit of information and a single day is not, so nothing here should move a constant yet.'
+    : (r===null?'No spread in the readings yet.'
+      : r>0.6?'The budget is tracking your experience reasonably well.'
+      : r>0.3?'Loosely related. Worth more days before changing anything.'
+      : 'Not tracking your experience. That is a fault in the constants, not in you.');
+}
+function suggestedHeadScale(){
+  const pairs=[];
+  Object.keys(S.days).forEach(k=>S.days[k].entries.forEach(e=>{
+    if(e.kind!=='activity'||e.felt==null||!e.hr||!e.dur)return;
+    const c=computedFor(e);if(c&&c>0)pairs.push(e.felt/c)}));
+  if(pairs.length<3)return null;
+  pairs.sort((a,b)=>a-b);
+  const med=pairs.length%2?pairs[(pairs.length-1)/2]:(pairs[pairs.length/2-1]+pairs[pairs.length/2])/2;
+  return round(S.settings.headScale*med,2);
+}
+
+let draft={activity:null,activity2:null,felt:null,friction:3,recovery:3,allocation_tag:'revenue-touching'};
+// medPhase counts only once tapped; ciGuess is what the sheet pre-selected.
+let ciDraft={domains:{},lastAte:'',medPhase:'',medTapped:false};
+let ciGuess=null;
+const SHEETS=['p-zero','p-dose','p-morning','p-spend','p-checkin','p-sleep'];
+const SHEET_TITLE={'p-zero':'Crash logged','p-dose':'Dose logged','p-morning':'Morning estimate',
+  'p-spend':'Log a spend','p-checkin':'Check-in','p-sleep':'Sleep logged'};
+const BTN_FOR={'p-zero':'b-zero','p-dose':'b-dose','p-morning':'b-morning','p-spend':'b-spend','p-checkin':'b-checkin','p-sleep':'b-sleep'};
+let openId=null;
+const FOOT_FOR={'p-spend':'sp-actions','p-checkin':'ci-actions'};
+
+function setFoot(id){
+  const f=$('sheet-foot'),park=$('foot-park');
+  while(f.firstChild)park.appendChild(f.firstChild);
+  const a=FOOT_FOR[id]?$(FOOT_FOR[id]):null;
+  if(a){f.appendChild(a);f.hidden=false}else{f.hidden=true}
+}
+function sizeSheet(){
+  const s=$('sheet');if(!s||s.hidden)return;
+  s.style.maxHeight='';
+  const top=s.getBoundingClientRect().top;
+  s.style.maxHeight=Math.max(240,Math.min(520,window.innerHeight-top-12))+'px';
+}
+function openSheet(id){
+  openId=id;
+  SHEETS.forEach(p=>{$(p).hidden=(p!==id)});
+  $('sheet').hidden=!id;
+  if(id)$('sheet-title').textContent=SHEET_TITLE[id]||'';
+  Object.keys(BTN_FOR).forEach(k=>$(BTN_FOR[k]).classList.toggle('on',k===id));
+  setFoot(id);
+  const b=$('sheet-body');if(b)b.scrollTop=0;
+  if(id)sizeSheet();
+  syncWhenRows();
+}
+function closeSheet(){pendingZero=false;openSheet(null)}
+function openPanel(id){openSheet(id)}
+function setView(v){
+  S.settings.view=v;
+  $('view-log').hidden=(v!=='log');
+  $('view-look').hidden=(v!=='look');
+  $('view-all').hidden=(v!=='all');
+  $('v-log').classList.toggle('on',v==='log');
+  $('v-look').classList.toggle('on',v==='look');
+  $('v-all').classList.toggle('on',v==='all');
+  $('v-log').setAttribute('aria-selected', v==='log');
+  $('v-look').setAttribute('aria-selected', v==='look');
+  $('v-all').setAttribute('aria-selected', v==='all');
+  if(v!=='log')closeSheet();
+  if(v==='all')renderAllView();else renderAll();
+  save();
+}
+
+let lastZeroId=null,lastDoseId=null,pendingZero=false;
+function renderPendingZero(host){
+  const t=document.createElement('div');t.className='hint';t.style.marginTop='0';
+  t.textContent='When did it happen on '+dayName(workKey())+'? Nothing is recorded until you pick a time, because a crash time is what the chart is made of.';
+  host.appendChild(t);
+  const row=document.createElement('div');row.className='row';row.style.marginTop='11px';
+  const lb=document.createElement('span');lb.className='costlab';lb.textContent='happened at';
+  const ti=document.createElement('input');ti.type='time';ti.style.width='auto';
+  ti.onchange=()=>{if(!ti.value)return;
+    pendingZero=false;lastZeroId=uid();
+    pushEntry({id:lastZeroId,kind:'zero',occurredAt:workKey()+'T'+ti.value,loggedAt:iso(new Date()),
+      activity:null,activity2:null,felt:0,condTags:{}});
+    renderZeroSheet();toast('Crash recorded at '+ti.value+' on '+dayName(workKey()))};
+  row.appendChild(lb);row.appendChild(ti);host.appendChild(row);
+}
+function renderZeroSheet(){
+  const host=$('zero-body');if(!host)return;
+  host.innerHTML='';
+  if(pendingZero&&isBack()){renderPendingZero(host);return}
+  const d=dayRO(workKey()),zs=d.entries.filter(x=>x.kind==='zero');
+  const e=zs.filter(x=>x.id===lastZeroId)[0]||zs.slice().sort((a,b)=>a.occurredAt<b.occurredAt?1:-1)[0];
+  if(!e){host.innerHTML='<div class="empty is-center">No crash logged on '+(isBack()?dayName(workKey()):'today')+'.</div>';return}
+  const t=document.createElement('div');t.className='hint';t.style.marginTop='0';
+  t.textContent='Logged at '+e.occurredAt.slice(11,16)+'. Chips are right here. Skip them if you have not got it in you.';
+  host.appendChild(t);
+  const ch=document.createElement('div');ch.className='picker';host.appendChild(ch);
+  buildPicker(ch,'zero',()=>({a1:e.activity,a2:e.activity2}),c=>{
+    if(e.activity===c){e.activity=e.activity2||null;e.activity2=null}
+    else if(e.activity2===c){e.activity2=null}
+    else if(!e.activity){e.activity=c}else{e.activity2=c}
+    save();renderBalance()});
+  const tm=document.createElement('div');tm.className='row';tm.style.marginTop='11px';
+  const ti=document.createElement('input');ti.type='time';ti.value=e.occurredAt.slice(11,16);ti.style.width='auto';
+  ti.onchange=()=>{if(ti.value){e.occurredAt=e.occurredAt.slice(0,10)+'T'+ti.value;
+    delete e.timeUnknown;save();renderAll();renderZeroSheet()}};
+  const lb=document.createElement('span');lb.className='costlab';lb.textContent='happened at';
+  tm.appendChild(lb);tm.appendChild(ti);host.appendChild(tm);
+}
+function usualDoseTime(){
+  let best=null,tk=workKey();
+  Object.keys(S.days).forEach(k=>{if(k>=tk)return;
+    (S.days[k].entries||[]).forEach(x=>{if(x.kind==='dose'&&(!best||x.occurredAt>best))best=x.occurredAt})});
+  return best?best.slice(11,16):'04:30';
+}
+function logDoseAt(hhmm){
+  const n=new Date(),k=workKey();
+  day(k).dayTags.meds=true;
+  pushEntry({id:uid(),kind:'dose',occurredAt:k+'T'+hhmm,loggedAt:iso(n),felt:null});
+  toast('Dose recorded at '+hhmm);
+}
+function skipToday(){
+  const n=new Date(),k=workKey();
+  day(k).dayTags.meds=false;
+  pushEntry({id:uid(),kind:'skip',occurredAt:stampNow(),loggedAt:iso(n),felt:null});
+  closeSheet();toast(isBack()?'No dose on '+dayName(WORKDAY)+', logged':'No dose today, logged');
+}
+function timeChips(host,onPick,current){
+  const row=document.createElement('div');row.className='row';row.setAttribute('role','group');row.setAttribute('aria-label','Time selection');row.style.marginTop='10px';
+  const usual=usualDoseTime();
+  const opts=[[usual,'usual '+usual]];
+  ['05:00','06:00'].forEach(v=>{if(v!==usual)opts.push([v,v])});
+  if(!isBack())opts.push([localTime(new Date()),'now']);
+  opts.forEach(o=>{const b=document.createElement('button');b.type='button';b.className='chip'+(current===o[0]?' on':'');
+    b.setAttribute('aria-pressed',current===o[0]?'true':'false');
+    b.textContent=o[1];b.onclick=()=>onPick(o[0]);row.appendChild(b)});
+  const ti=document.createElement('input');ti.type='time';ti.style.width='auto';
+  if(current)ti.value=current;
+  ti.onchange=()=>{if(ti.value)onPick(ti.value)};
+  row.appendChild(ti);host.appendChild(row);
+}
+function renderDoseSheet(){
+  const host=$('dose-body');if(!host)return;
+  const d=dayRO(workKey()),e=d.entries.filter(x=>x.kind==='dose').sort((a,b)=>a.occurredAt<b.occurredAt?1:-1)[0];
+  host.innerHTML='';
+  if(!e){
+    const t=document.createElement('div');t.className='hint';t.style.marginTop='0';
+    t.textContent='When did you take it? Nothing is recorded until you pick a time. The correction curve peaks 10 hours after whatever you choose, so it is worth being roughly right.';
+    host.appendChild(t);
+    timeChips(host,v=>logDoseAt(v),null);
+    const sk=document.createElement('div');sk.className='row';sk.style.marginTop='14px';
+    const nb=document.createElement('button');nb.className='ghost tiny';nb.textContent='No dose today';
+    nb.onclick=skipToday;sk.appendChild(nb);host.appendChild(sk);
+    return;
+  }
+  const t=document.createElement('div');t.className='hint';t.style.marginTop='0';
+  t.textContent='Recorded as taken at '+e.occurredAt.slice(11,16)+'. Change it here if that is wrong.';
+  host.appendChild(t);
+  timeChips(host,v=>{e.occurredAt=e.occurredAt.slice(0,10)+'T'+v;save();renderAll();renderDoseSheet()},e.occurredAt.slice(11,16));
+  const sk=document.createElement('div');sk.className='row';sk.style.marginTop='12px';
+  const nb=document.createElement('button');nb.className='ghost tiny';nb.textContent='Actually, no dose today';
+  nb.onclick=()=>{const arr=day(workKey()).entries;const i=arr.indexOf(e);if(i>-1)arr.splice(i,1);
+    day(workKey()).dayTags.meds=false;
+    const n=new Date();arr.push({id:uid(),kind:'skip',occurredAt:stampNow(),loggedAt:iso(n),felt:null});
+    save();renderAll();closeSheet();toast('Skipped day logged')};
+  sk.appendChild(nb);host.appendChild(sk);
+}
+function renderSleepSheet(){
+  const host=$('sleep-body');if(!host)return;
+  const d=dayRO(workKey());
+  const curSleep = (d.sleep !== '' && d.sleep != null) ? parseFloat(d.sleep) : null;
+  const curQual = d.sleepQuality != null ? d.sleepQuality : 3;
+
+  let slStatus = $('sl-sleep-status');
+  let slChips = $('sl-sleep-chips');
+  let slHours = $('sl-sleep-hours');
+  let slQual = $('sl-sleep-qual');
+  let slQualOut = $('sl-sleep-qual-output');
+
+  if (!slStatus || !slChips || !slHours || !slQual) {
+    host.innerHTML = '';
+
+    const stEl = document.createElement('div');
+    stEl.className = 'hint';
+    stEl.id = 'sl-sleep-status';
+    stEl.style.marginTop = '0';
+    host.appendChild(stEl);
+
+    const chipLab = document.createElement('div');
+    chipLab.className = 'lab nano-label';
+    chipLab.style.marginTop = '10px';
+    chipLab.style.marginBottom = '6px';
+    chipLab.textContent = 'Quick durations';
+    host.appendChild(chipLab);
+
+    const chipsRow = document.createElement('div');
+    chipsRow.id = 'sl-sleep-chips';
+    chipsRow.className = 'row';
+    chipsRow.setAttribute('role', 'group');
+    chipsRow.setAttribute('aria-label', 'Sleep duration quick select');
+
+    const durations = [5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 10];
+    durations.forEach(h => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.hours = String(h);
+      b.textContent = h + 'h';
+      b.onclick = () => {
+        const val = String(h);
+        day(workKey()).sleep = val;
+        save();
+        renderAll();
+        renderSleepSheet();
+        toast('Sleep logged: ' + val + 'h on ' + (isBack() ? dayName(workKey()) : 'today'));
+      };
+      chipsRow.appendChild(b);
+    });
+    host.appendChild(chipsRow);
+
+    const wokeLab = document.createElement('div');
+    wokeLab.className = 'lab nano-label';
+    wokeLab.style.marginTop = '14px';
+    wokeLab.style.marginBottom = '6px';
+    wokeLab.textContent = 'Woke up at';
+    host.appendChild(wokeLab);
+
+    const wokeRow = document.createElement('div');
+    wokeRow.id = 'sl-woke-chips';
+    wokeRow.className = 'row';
+    wokeRow.setAttribute('role', 'group');
+    wokeRow.setAttribute('aria-label', 'Woke up at');
+    host.appendChild(wokeRow);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid g2';
+    grid.style.marginTop = '14px';
+
+    const sleepFld = document.createElement('label');
+    sleepFld.className = 'field';
+    const sleepSpan = document.createElement('span');
+    sleepSpan.className = 'lab nano-label';
+    sleepSpan.textContent = 'Sleep hours (h)';
+    sleepFld.appendChild(sleepSpan);
+
+    const sleepInp = document.createElement('input');
+    sleepInp.type = 'number';
+    sleepInp.id = 'sl-sleep-hours';
+    sleepInp.step = '0.5';
+    sleepInp.min = '0';
+    sleepInp.max = '24';
+    sleepInp.placeholder = 'e.g. 7.5';
+    sleepInp.className = '';
+    sleepInp.oninput = (e) => {
+      day(workKey()).sleep = e.target.value;
+      save();
+      renderAll();
+    };
+    sleepFld.appendChild(sleepInp);
+    grid.appendChild(sleepFld);
+
+    const qualFld = document.createElement('label');
+    qualFld.className = 'field';
+    const qualSpan = document.createElement('span');
+    qualSpan.className = 'lab nano-label';
+    qualSpan.textContent = 'Sleep Quality (1-5)';
+    qualFld.appendChild(qualSpan);
+
+    const qualRange = document.createElement('input');
+    qualRange.type = 'range';
+    qualRange.id = 'sl-sleep-qual';
+    qualRange.min = '1';
+    qualRange.max = '5';
+    qualRange.step = '1';
+
+    const sliderBox = document.createElement('div');
+    sliderBox.className = 'slider-container';
+    sliderBox.innerHTML = '<span>1: terrible</span><output id="sl-sleep-qual-output">3</output><span>5: excellent</span>';
+
+    qualRange.oninput = (e) => {
+      const qVal = parseInt(e.target.value, 10);
+      const out = $('sl-sleep-qual-output');
+      if (out) out.textContent = qVal;
+      day(workKey()).sleepQuality = qVal;
+      save();
+      const msq = $('morn-sleep-qual');
+      if (msq) {
+        msq.value = qVal;
+        if (msq.nextElementSibling && msq.nextElementSibling.querySelector('output')) {
+          msq.nextElementSibling.querySelector('output').textContent = qVal;
+        }
+      }
+      renderSleepStatus();
+      renderMorningButtonsStatus();
+    };
+    qualFld.appendChild(qualRange);
+    qualFld.appendChild(sliderBox);
+    grid.appendChild(qualFld);
+
+    host.appendChild(grid);
+
+    const hintBox = document.createElement('div');
+    hintBox.className = 'hint';
+    hintBox.style.marginTop = '14px';
+    const st = S.settings;
+    const sleepNeed = st.sleepNeed || 8;
+    const sleepPenPct = Math.round((st.sleepPen || 0.03) * 100);
+    hintBox.innerHTML = 'Baseline sleep need is <strong>' + sleepNeed + 'h</strong>. Sleeping less applies a light penalty of <strong>' + sleepPenPct + '%/h</strong> short (capped at 15% reduction) to your base spoon budget.';
+    host.appendChild(hintBox);
+
+    slStatus = $('sl-sleep-status');
+    slChips = $('sl-sleep-chips');
+    slHours = $('sl-sleep-hours');
+    slQual = $('sl-sleep-qual');
+    slQualOut = $('sl-sleep-qual-output');
+  }
+
+  function renderSleepStatus() {
+    const curD = dayRO(workKey());
+    const curS = (curD.sleep !== '' && curD.sleep != null) ? parseFloat(curD.sleep) : null;
+    if (slStatus) {
+      slStatus.textContent = (curS != null ? 'Logged: ' + curS + 'h sleep' : 'No sleep logged for ' + (isBack() ? dayName(workKey()) : 'today')) + (curD.sleepQuality ? ' · Quality: ' + curD.sleepQuality + '/5' : '') + (curD.wokeUp ? ' · Woke up at: ' + curD.wokeUp : '') + '.';
+    }
+  }
+
+  renderSleepStatus();
+
+  if (slChips) {
+    slChips.querySelectorAll('button').forEach(b => {
+      const isSelected = curSleep != null && parseFloat(b.dataset.hours) === curSleep;
+      b.className = 'chip' + (isSelected ? ' on' : '');
+      b.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    });
+  }
+
+  // Rebuilt each time: the list is editable under Check-in, Edit options.
+  const wokeRow = $('sl-woke-chips');
+  if (wokeRow) {
+    wokeRow.innerHTML = '';
+    (S.options.wokeup || []).forEach(o => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      const on = d.wokeUp === o;
+      b.className = 'chip' + (on ? ' on' : '');
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.textContent = o;
+      b.onclick = () => {
+        const dd = day(workKey());
+        dd.wokeUp = (dd.wokeUp === o) ? '' : o;
+        save();
+        renderAll();
+        renderSleepSheet();
+        toast(dd.wokeUp ? 'Woke up at: ' + o : 'Wake time cleared');
+      };
+      wokeRow.appendChild(b);
+    });
+  }
+
+  if (slHours && document.activeElement !== slHours) {
+    slHours.value = d.sleep || '';
+  }
+  if (slQual && document.activeElement !== slQual) {
+    slQual.value = curQual;
+    if (slQualOut) slQualOut.textContent = curQual;
+  }
+}
+function renderSpoonRow(){
+  const host=$('spoonRow');host.innerHTML='';
+  const d=dayRO(workKey());
+  for(let v=0;v<=10;v++){(function(val){
+    const b=document.createElement('button');
+    b.className='spoon-btn'+(d.morningEstimate===val?' on':'');b.textContent=val;
+    b.onclick=()=>{const n=new Date(),d=day(workKey());
+      if(d.morningEstimate===val){d.morningEstimate=null;d.morningAt='';d.morningLoggedAt=''}
+      else{d.morningEstimate=val;d.morningAt=d.morningAt||(isBack()?WORKDAY+'T07:00':iso(n));d.morningLoggedAt=iso(n)}
+      save();renderAll()};
+    host.appendChild(b)})(v)}
+  $('morningNote').textContent=d.morningEstimate!=null
+    ?'Logged '+d.morningEstimate+'/10. This becomes '+(isBack()?dayName(workKey())+'’s':'today’s')+' budget.'
+    :'Tap the number that matches. It becomes '+(isBack()?dayName(workKey())+'’s':'today’s')+' budget.';
+  
+  const sq = $('morn-sleep-qual');
+  if (sq) {
+    sq.value = d.sleepQuality || 3;
+    if (sq.nextElementSibling && sq.nextElementSibling.querySelector('output')) {
+      sq.nextElementSibling.querySelector('output').textContent = sq.value;
+    }
+    sq.oninput = () => {
+        if (sq.nextElementSibling && sq.nextElementSibling.querySelector('output')) {
+          sq.nextElementSibling.querySelector('output').textContent = sq.value;
+        }
+        const qVal = parseInt(sq.value, 10);
+        day(workKey()).sleepQuality = qVal;
+        save();
+        const slq = $('sl-sleep-qual');
+        if (slq) {
+          slq.value = qVal;
+          const out = $('sl-sleep-qual-output');
+          if (out) out.textContent = qVal;
+        }
+    };
+    sq.onchange = sq.oninput;
+  }
+}
+
+const CHIP_CAP=12;
+const pickerState={spend:{f:'',all:false},zero:{f:'',all:false}};
+function chipLastUsed(){
+  const last={};
+  Object.keys(S.days).forEach(k=>(S.days[k].entries||[]).forEach(e=>{
+    [e.activity,e.activity2].forEach(c=>{if(c&&(!last[c]||e.occurredAt>last[c]))last[c]=e.occurredAt})}));
+  return last;
+}
+function chipOrder(){
+  const last=chipLastUsed();
+  return S.chips.slice().sort((a,b)=>{
+    const la=last[a]||'',lb=last[b]||'';
+    if(la&&lb)return la<lb?1:-1;
+    if(la)return -1;if(lb)return 1;
+    return S.chips.indexOf(a)-S.chips.indexOf(b);
+  });
+}
+function findChip(name){
+  const k=(name||'').trim().toLowerCase();
+  if(!k)return null;
+  for(let i=0;i<S.chips.length;i++)if(S.chips[i].trim().toLowerCase()===k)return S.chips[i];
+  return null;
+}
+function addChipSafe(name){
+  const hit=findChip(name);
+  if(hit)return hit;
+  const v=(name||'').trim();
+  if(!v)return null;
+  S.chips.push(v);return v;
+}
+function buildPicker(host,key,getSel,toggle){
+  host.innerHTML='';
+  const st=pickerState[key];
+  const find=document.createElement('input');
+  find.className='chipfind';find.type='text';find.value=st.f;
+  find.placeholder='type to find or add a tag';
+  const list=document.createElement('div');list.className='chips';list.setAttribute('role','group');list.setAttribute('aria-label','Tags');
+  const more=document.createElement('div');more.className='pickmore';
+  host.appendChild(find);host.appendChild(list);host.appendChild(more);
+  function draw(){
+    const sel=getSel();
+    const q=st.f.trim().toLowerCase();
+    let all=chipOrder();
+    if(q)all=all.filter(c=>c.toLowerCase().indexOf(q)>-1);
+    const shown=(q||st.all)?all.slice(0,60):all.slice(0,CHIP_CAP);
+    list.innerHTML='';more.innerHTML='';
+    shown.forEach(c=>{const b=document.createElement('button');b.type='button';
+      const isA1=sel.a1===c,isA2=sel.a2===c;
+      b.className='chip'+(isA1?' on':isA2?' on2':'');
+      b.setAttribute('aria-pressed',(isA1||isA2)?'true':'false');
+      b.textContent=c;
+      b.onclick=()=>{toggle(c);draw()};list.appendChild(b)});
+    if(q&&!findChip(st.f)){
+      const b=document.createElement('button');b.type='button';b.className='chip warn';b.setAttribute('aria-pressed','false');b.textContent='+ add "'+st.f.trim()+'"';
+      b.onclick=()=>{const v=addChipSafe(st.f);if(v){toggle(v);save()}st.f='';find.value='';draw()};
+      list.appendChild(b);
+    }
+    if(!q&&all.length>CHIP_CAP){
+      const b=document.createElement('button');b.type='button';
+      b.textContent=st.all?'show recent only':'show all '+all.length;
+      b.onclick=()=>{st.all=!st.all;draw()};more.appendChild(b);
+    }
+    if(q&&!shown.length&&findChip(st.f)){
+      const hit=findChip(st.f);const b=document.createElement('button');b.type='button';b.className='chip';b.setAttribute('aria-pressed','false');b.textContent=hit;
+      b.onclick=()=>{toggle(hit);draw()};list.appendChild(b);
+    }
+  }
+  find.addEventListener('input',()=>{st.f=find.value;draw()});
+  find.addEventListener('keydown',ev=>{
+    if(ev.key!=='Enter')return;ev.preventDefault();
+    const v=addChipSafe(st.f);if(v){toggle(v);save()}
+    st.f='';find.value='';draw();
+  });
+  draw();
+  return draw;
+}
+function renderSpendForm(){
+  buildPicker($('sp-chips'),'spend',()=>({a1:draft.activity,a2:draft.activity2}),c=>{
+    if(draft.activity===c){draft.activity=draft.activity2||null;draft.activity2=null}
+    else if(draft.activity2===c){draft.activity2=null}
+    else if(!draft.activity){draft.activity=c}else{draft.activity2=c}});
+  const cr=$('sp-felt');cr.innerHTML='';
+  const cl=document.createElement('span');cl.className='costlab';cl.textContent='felt spoons';cr.appendChild(cl);
+  for(let v=0;v<=10;v++){(function(val){const b=document.createElement('button');
+    const whole=draft.felt!=null?Math.floor(draft.felt):null;
+    b.className='cost-btn'+(whole===val?' on':'');b.textContent=val;
+    b.onclick=()=>{const half=(draft.felt!=null&&draft.felt%1===0.5)?0.5:0;
+      draft.felt=(draft.felt===val+half)?null:val+half;renderSpendForm()};
+    cr.appendChild(b)})(v)}
+  const hb=document.createElement('button');
+  hb.className='cost-btn'+((draft.felt!=null&&draft.felt%1===0.5)?' on':'');hb.textContent='+½';
+  hb.onclick=()=>{if(draft.felt==null)draft.felt=0.5;else if(draft.felt%1===0.5)draft.felt-=0.5;else draft.felt+=0.5;renderSpendForm()};
+  cr.appendChild(hb);
+  
+  $('sp-friction').value = draft.friction;
+  $('sp-friction').nextElementSibling.querySelector('output').textContent = draft.friction;
+  $('sp-recovery').value = draft.recovery;
+  $('sp-recovery').nextElementSibling.querySelector('output').textContent = draft.recovery;
+  if(safe('sp-alloc')) safe('sp-alloc').value = draft.allocation_tag || 'revenue-touching';
+
+  renderSpendWhy();
+}
+function renderSpendWhy(){
+  const hr=parseFloat($('sp-hr').value),dur=parseFloat($('sp-dur').value);
+  if(isNaN(hr)||isNaN(dur)||hr<=0||dur<=0){$('sp-why').textContent='Computed cost appears here once heart rate and minutes are in.';return}
+  const tags={};document.querySelectorAll('[data-act]').forEach(el=>tags[el.dataset.act]=el.checked);
+  const c=activityCost({hr,dur,dial:parseInt($('sp-dial').value,10),tags,at:whenFor('sp-time')});
+  const bits=['computed '+round(c.total,2).toFixed(2)+' spoons'];
+  if(c.offset)bits.push(hr+' corrected to '+round(c.effHR,0)+' bpm ('+c.offset.toFixed(1)+' bpm off, '+(c.hoursSince!=null?c.hoursSince.toFixed(1)+'h since dose':'daily mean')+')');
+  bits.push('body '+round(c.bodyCost,2)+' + head '+round(c.headCost,2));
+  if(c.mult!==1)bits.push('x'+round(c.mult,2)+' conditions, tapered');
+  if(c.bodyCost===0)bits.push('body cost is zero: corrected HR is at or below your baseline');
+  $('sp-why').textContent=bits.join(' · ');
+}
+function buildToggles(){
+  $('sp-tags').innerHTML=ACT_TAGS.map(t=>'<label class="toggle"><input type="checkbox" data-act="'+t.id+'"><span>'+t.label+'</span><span class="mult">x'+t.m+'</span></label>').join('');
+  $('day-tags').innerHTML=DAY_TAGS.map(t=>'<label class="toggle '+(t.kind==='correct'?'corr':'')+'"><input type="checkbox" data-day="'+t.id+'"><span>'+t.label+'</span><span class="mult">'+(t.kind==='correct'?t.note:'x'+t.m)+'</span></label>').join('');
+  document.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('change',renderSpendWhy));
+  document.querySelectorAll('[data-day]').forEach(el=>el.addEventListener('change',e=>{
+    day(workKey()).dayTags[e.target.dataset.day]=e.target.checked;save();renderAll()}));
+}
+function chipRow(label,opts,isOn,onTap){
+  const w=document.createElement('div');w.style.marginBottom='11px';
+  const l=document.createElement('div');l.className='lab nano-label';l.textContent=label;
+  w.appendChild(l);
+  const ch=document.createElement('div');ch.className='chips';ch.setAttribute('role','group');ch.setAttribute('aria-label',label);ch.style.marginTop='5px';
+  opts.forEach(o=>{
+    const b=document.createElement('button');b.type='button';
+    const active=isOn(o);
+    b.className='chip'+(active?' on':'');
+    b.setAttribute('aria-pressed',active?'true':'false');
+    b.textContent=o;b.onclick=()=>onTap(o);
+    ch.appendChild(b)});
+  w.appendChild(ch);return w;
+}
+function renderCheckin(){
+  const top=$('ci-domains'),ctx=$('ci-context'),more=$('ci-more-domains');
+  top.innerHTML='';ctx.innerHTML='';more.innerHTML='';
+  DOMAINS.forEach(d=>{
+    (d.top?top:more).appendChild(chipRow(d.label,S.options[d.id]||[],
+      o=>(ciDraft.domains[d.id]||[]).indexOf(o)>-1,
+      o=>{const c=ciDraft.domains[d.id]||[];
+        ciDraft.domains[d.id]=c.indexOf(o)>-1?c.filter(z=>z!==o):c.concat([o]);renderCheckin()}))});
+  const k=workKey(),dosed=!!firstDoseOn(k);
+  ciGuess=dosed?guessMedPhase(k,whenFor('ci-time')):null;
+  if(dosed){
+    const shown=ciDraft.medTapped?ciDraft.medPhase:(ciGuess?ciGuess.phase:'');
+    const w=chipRow('Medication phase',MED_PHASES,o=>o===shown,
+      o=>{ciDraft.medPhase=(o===shown)?'':o;ciDraft.medTapped=true;renderCheckin()});
+    if(ciGuess&&!ciDraft.medTapped){
+      const h=document.createElement('div');h.className='hint';h.style.marginTop='5px';
+      h.textContent=ciGuess.why;w.appendChild(h);
+    }
+    ctx.appendChild(w);
+  }
+  (dosed?ctx:more).appendChild(chipRow('Last ate',LAST_ATE,o=>o===ciDraft.lastAte,
+    o=>{ciDraft.lastAte=(o===ciDraft.lastAte)?'':o;renderCheckin()}));
+}
+// Woke up at moved to the Sleep sheet but its list is still edited here.
+const ADMIN_DOMAINS=DOMAINS.concat([{id:'wokeup',label:'Woke up at (Sleep sheet)'}]);
+function renderCiAdmin(){
+  const host=$('ci-admin');host.innerHTML='';
+  ADMIN_DOMAINS.forEach(d=>{
+    const w=document.createElement('div');w.style.marginBottom='9px';
+    const l=document.createElement('div');l.className='nano-label';l.textContent=d.label;
+    w.appendChild(l);
+    const ch=document.createElement('div');ch.className='chips';ch.setAttribute('role','group');ch.setAttribute('aria-label',d.label);ch.style.marginTop='4px';
+    (S.options[d.id]||[]).forEach(o=>{
+      const b=document.createElement('button');b.type='button';b.className='chip';b.setAttribute('aria-pressed','false');
+      const n=optionUsage(d.id,o);b.innerHTML=o+(n?'<span class="cnt"> ('+n+')</span>':'');
+      b.title='Rename everywhere it was logged';
+      b.onclick=()=>{b.hidden=true;
+        const inp=document.createElement('input');inp.className='chip';inp.style.width='150px';inp.value=o;
+        const ok=document.createElement('button');ok.type='button';ok.className='chip';ok.textContent='save';
+        const commit=()=>{const v=inp.value.trim();
+          if(v&&v!==o){renameOption(d.id,o,v);save();renderAll()}
+          renderCiAdmin()};
+        ok.onclick=commit;inp.onkeydown=ev=>{if(ev.key==='Enter')commit();if(ev.key==='Escape')renderCiAdmin()};
+        ch.insertBefore(inp,b.nextSibling);ch.insertBefore(ok,inp.nextSibling);inp.focus();inp.select()};
+      ch.appendChild(b)});
+    const add=document.createElement('button');add.type='button';add.className='chip';add.setAttribute('aria-pressed','false');add.textContent='+ add';
+    add.onclick=()=>{add.hidden=true;
+      const inp=document.createElement('input');inp.className='chip';inp.style.width='150px';inp.placeholder='new option';
+      const ok=document.createElement('button');ok.type='button';ok.className='chip';ok.textContent='add';
+      const commit=()=>{const v=inp.value.trim();
+        if(v){S.options[d.id]=(S.options[d.id]||[]).concat([v]);save();renderCheckin()}
+        renderCiAdmin()};
+      ok.onclick=commit;inp.onkeydown=ev=>{if(ev.key==='Enter')commit();if(ev.key==='Escape')renderCiAdmin()};
+      ch.appendChild(inp);ch.appendChild(ok);inp.focus()};
+    ch.appendChild(add);w.appendChild(ch);host.appendChild(w)});
+}
+function chipUsage(name){let n=0;
+  Object.keys(S.days).forEach(k=>(S.days[k].entries||[]).forEach(e=>{
+    if(e.activity===name||e.activity2===name)n++}));return n}
+function renameChip(oldName,rawNew){
+  const v=(rawNew||'').trim();
+  if(!v||v===oldName)return null;
+  const others=S.chips.filter(c=>c!==oldName);
+  let target=null;
+  for(let i=0;i<others.length;i++)if(others[i].trim().toLowerCase()===v.toLowerCase()){target=others[i];break}
+  const merging=!!target,name=target||v;
+  const i=S.chips.indexOf(oldName);
+  if(merging){if(i>-1)S.chips.splice(i,1)}else if(i>-1){S.chips[i]=name}else{S.chips.push(name)}
+  let touched=0;
+  Object.keys(S.days).forEach(k=>(S.days[k].entries||[]).forEach(e=>{
+    let hit=false;
+    if(e.activity===oldName){e.activity=name;hit=true}
+    if(e.activity2===oldName){e.activity2=name;hit=true}
+    if(!hit)return;
+    if(e.activity&&e.activity2&&e.activity===e.activity2)e.activity2=null;
+    if(!e.activity&&e.activity2){e.activity=e.activity2;e.activity2=null}
+    touched++}));
+  if(draft.activity===oldName)draft.activity=name;
+  if(draft.activity2===oldName)draft.activity2=name;
+  return{merged:merging,name:name,entries:touched};
+}
+function removeChip(name){
+  S.chips=S.chips.filter(c=>c!==name);
+  if(draft.activity===name)draft.activity=null;
+  if(draft.activity2===name)draft.activity2=null;
+}
+let tagEditing=null,tagConfirm=null;
+function renderTagAdmin(){
+  const host=$('tagadmin');if(!host)return;
+  host.innerHTML='';
+  host.setAttribute('role','group');
+  host.setAttribute('aria-label','Tags');
+  const note=$('tagadmin-note');
+  chipOrder().forEach(c=>{
+    if(tagEditing===c){
+      const inp=document.createElement('input');inp.className='chipfind';inp.style.width='190px';inp.value=c;
+      const ok=document.createElement('button');ok.type='button';ok.className='chip';ok.textContent='save';
+      const cancel=document.createElement('button');cancel.type='button';cancel.className='chip';cancel.textContent='cancel';
+      const commit=()=>{const r=renameChip(c,inp.value);tagEditing=null;
+        if(r){save();note.textContent=(r.merged?'Merged into "':'Renamed to "')+r.name+'", '+r.entries+' '+(r.entries===1?'entry':'entries')+' updated.'}
+        renderAll();renderTagAdmin()};
+      ok.onclick=commit;cancel.onclick=()=>{tagEditing=null;renderTagAdmin()};
+      inp.onkeydown=ev=>{if(ev.key==='Enter')commit();if(ev.key==='Escape'){tagEditing=null;renderTagAdmin()}};
+      host.appendChild(inp);host.appendChild(ok);host.appendChild(cancel);
+      setTimeout(()=>{inp.focus();inp.select()},0);return;
+    }
+    const used=chipUsage(c);
+    const b=document.createElement('span');b.className='chip';
+    const lbl=document.createElement('span');lbl.textContent=c;lbl.style.cursor='pointer';
+    lbl.title='Rename it everywhere it was logged';
+    lbl.onclick=()=>{tagEditing=c;tagConfirm=null;note.textContent='';renderTagAdmin()};
+    b.appendChild(lbl);
+    if(used){const n=document.createElement('span');n.className='cnt';n.textContent=' ('+used+')';b.appendChild(n)}
+    const x=document.createElement('button');
+    x.type='button';
+    x.className='btn btn-ghost btn-caps';
+    x.style.marginLeft='7px';
+    x.innerHTML='\u2715';
+    makeTwoTap(x, '\u2715', ()=>{
+      removeChip(c);tagConfirm=null;note.textContent='';save();renderAll();renderTagAdmin();
+    }, ()=>{
+      if(used){
+        note.textContent='"' + c + '" is on '+used+' '+(used===1?'entry':'entries')+'. Removing takes it off the list and leaves those entries tagged with it. Rename instead if you want them to follow.';
+      }
+    });
+    b.appendChild(x);
+    host.appendChild(b)});
+  if(!host.children.length)host.innerHTML='<div class="empty is-center">No tags yet.</div>';
+}
+function optionUsage(dom,opt){let n=0;
+  Object.keys(S.days).forEach(k=>{
+    if(dom==='wokeup'&&S.days[k].wokeUp===opt)n++;
+    (S.days[k].entries||[]).forEach(e=>{
+    if(e.kind==='checkin'&&e.domains&&e.domains[dom]&&e.domains[dom].indexOf(opt)>-1)n++})});return n}
+function renameOption(dom,oldN,newN){
+  const list=S.options[dom]||[];const i=list.indexOf(oldN);
+  if(list.indexOf(newN)>-1){if(i>-1)list.splice(i,1)}else if(i>-1)list[i]=newN;else list.push(newN);
+  S.options[dom]=list;
+  Object.keys(S.days).forEach(k=>{if(dom==='wokeup'&&S.days[k].wokeUp===oldN)S.days[k].wokeUp=newN});
+  Object.keys(S.days).forEach(k=>(S.days[k].entries||[]).forEach(e=>{
+    if(e.kind!=='checkin'||!e.domains||!e.domains[dom])return;
+    const out=[];e.domains[dom].forEach(o=>{const v=(o===oldN)?newN:o;if(out.indexOf(v)===-1)out.push(v)});
+    e.domains[dom]=out}));
+}
+
+const KINDS=[['activity','spend'],['zero','zero spoons'],['dose','dose'],['skip','dose skipped'],['checkin','check-in']];
+function loggedKey(r){
+  return r.type==='morning' ? (r.d.morningLoggedAt||r.d.morningAt||r.day+'T00:00')
+                            : (r.e.loggedAt||r.e.occurredAt);
+}
+function allRows(){
+  const rows=[];
+  Object.keys(S.days).forEach(k=>{
+    const d=S.days[k];
+    if(d.morningEstimate!=null)rows.push({type:'morning',day:k,d:d});
+    (d.entries||[]).forEach(e=>rows.push({type:'entry',day:k,e:e}));
+  });
+  rows.sort((a,b)=>{const x=loggedKey(a),y=loggedKey(b);return x<y?-1:x>y?1:0});
+  return rows;
+}
+function fld(label,el,cls){
+  const w=document.createElement('label');w.className='f'+(cls?' '+cls:'');
+  const l=document.createElement('span');l.className='fl';l.textContent=label;
+  w.appendChild(l);w.appendChild(el);return w;
+}
+function inp(type,val,w){const e=document.createElement('input');e.type=type;
+  if(val!=null&&val!=='')e.value=val;if(w)e.style.width=w;return e}
+function sel(opts,val){const s=document.createElement('select');
+  opts.forEach(o=>{const t=document.createElement('option');
+    t.value=(o instanceof Array)?o[0]:o;t.textContent=(o instanceof Array)?o[1]:(o===''?'—':o);s.appendChild(t)});
+  s.value=val==null?'':val;return s}
+function lagOf(e){const m=Math.round((new Date(e.loggedAt)-new Date(e.occurredAt))/60000);return isNaN(m)?'':m}
+function moveDay(e,oldDay,newDay){
+  if(oldDay===newDay)return;
+  const a=day(oldDay).entries,i=a.indexOf(e);if(i>-1)a.splice(i,1);
+  day(newDay).entries.push(e);
+}
+function derivedText(e){
+  const bits=[];
+  const c=computedFor(e);if(c!=null)bits.push('computed '+c.toFixed(2));
+  if(e.kind==='activity')bits.push('counts '+entryCost(e));
+  const l=lagOf(e);if(l!=='')bits.push('logged '+l+' min after');
+  const h=hoursSinceDose(e.occurredAt);if(h!=null)bits.push(round(h,1)+'h since dose');
+  if(e.src)bits.push('from '+e.src);
+  if(e.timeUnknown)bits.push('time never set, not counted');
+  return bits.join('  ·  ');
+}
+function renderAllView(){
+  const host=$('all-body');if(!host)return;
+  const rows=allRows();
+  $('all-note').textContent=rows.length+' rows, oldest first, in the order you logged them';
+  host.innerHTML='';
+  if(!rows.length){host.innerHTML='<div class="empty is-center" style="padding:16px">Nothing logged yet.</div>';return}
+  rows.forEach((r,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='arow k-'+(r.type==='morning'?'morning':r.e.kind);
+    const head=document.createElement('div');head.className='ahead';
+    const n=document.createElement('span');n.className='anum';n.textContent=String(i+1).padStart(3,'0');
+    head.appendChild(n);
+    const fields=document.createElement('div');fields.className='afields';
+
+    if(r.type==='morning'){
+      const tag=document.createElement('span');tag.className='tag';tag.textContent='morning estimate';
+      head.appendChild(tag);
+      const del=document.createElement('button');
+      del.className='btn btn-ghost btn-caps';
+      del.style.marginLeft='auto';
+      del.innerHTML='✕';
+      del.title='Clear this estimate';
+      makeTwoTap(del, '✕', ()=>{r.d.morningEstimate=null;r.d.morningAt='';r.d.morningLoggedAt='';save();renderAllView()});
+      head.appendChild(del);
+      const v=inp('number',r.d.morningEstimate,'70px');v.min=0;v.max=10;v.step=1;
+      v.onchange=()=>{const x=parseFloat(v.value);r.d.morningEstimate=isNaN(x)?null:clamp(x,0,10);save()};
+      fields.appendChild(fld('out of 10',v));
+      const sq=inp('number',r.d.sleepQuality||'','70px');sq.min=1;sq.max=5;sq.step=1;
+      sq.onchange=()=>{r.d.sleepQuality=parseInt(sq.value,10);save()};
+      fields.appendChild(fld('sleep qual 1-5',sq));
+      const at=r.d.morningAt||r.day+'T00:00';
+      const dt=inp('date',at.slice(0,10));const tm=inp('time',at.slice(11,16));
+      const up=()=>{if(dt.value&&tm.value)r.d.morningAt=dt.value+'T'+tm.value;save()};
+      dt.onchange=up;tm.onchange=up;
+      fields.appendChild(fld('happened',dt));fields.appendChild(fld('at',tm));
+      const ro=document.createElement('span');ro.className='ro';ro.textContent=(r.d.morningLoggedAt||'not recorded');
+      fields.appendChild(fld('logged',ro));
+      const en=inp('number',r.d.feltEnergy,'70px');en.min=0;en.max=10;
+      en.onchange=()=>{r.d.feltEnergy=en.value;save()};
+      fields.appendChild(fld('end of day 0-10',en));
+      wrap.appendChild(head);wrap.appendChild(fields);host.appendChild(wrap);return;
+    }
+
+    const e=r.e;
+    const ks=sel(KINDS,e.kind);ks.style.maxWidth='140px';
+    ks.onchange=()=>{e.kind=ks.value;
+      if(e.kind==='zero')e.felt=0;
+      if(e.kind==='checkin'&&!e.domains)e.domains={};
+      save();renderAllView()};
+    head.appendChild(fld('kind',ks));
+    if(e.kind==='activity'){
+      const atVal = e.allocation_tag || 'revenue-touching';
+      const atTag = document.createElement('span');
+      atTag.className = 'tag alloc-' + atVal;
+      atTag.textContent = atVal;
+      head.appendChild(atTag);
+    }
+    const spacer=document.createElement('span');spacer.style.flex='1';head.appendChild(spacer);
+    const del=document.createElement('button');
+    del.className='btn btn-ghost btn-caps';
+    del.style.marginLeft='auto';
+    del.innerHTML='✕';
+    del.title='Remove this entry';
+    makeTwoTap(del, '✕', ()=>{const a=day(r.day).entries,i2=a.indexOf(e);if(i2>-1)a.splice(i2,1);save();renderAllView()});
+    head.appendChild(del);
+
+    const dt=inp('date',e.occurredAt.slice(0,10));const tm=inp('time',e.occurredAt.slice(11,16));
+    const upTime=()=>{if(!dt.value||!tm.value)return;
+      const nd=dt.value;e.occurredAt=nd+'T'+tm.value;e.timeUnknown=false;
+      moveDay(e,r.day,nd);r.day=nd;save();dv.textContent=derivedText(e)};
+    dt.onchange=upTime;tm.onchange=upTime;
+    fields.appendChild(fld('happened',dt));fields.appendChild(fld('at',tm));
+    const ro=document.createElement('span');ro.className='ro';ro.textContent=e.loggedAt||'—';
+    fields.appendChild(fld('logged',ro));
+
+    const lb=inp('text',e.label||'');
+    lb.onchange=()=>{e.label=lb.value;save()};
+    fields.appendChild(fld('label',lb));
+
+    if(e.kind==='activity'||e.kind==='zero'){
+      const opts=[''].concat(S.chips);
+      const a1=sel(opts,e.activity||'');a1.onchange=()=>{e.activity=a1.value||null;save();dv.textContent=derivedText(e)};
+      const a2=sel(opts,e.activity2||'');a2.onchange=()=>{e.activity2=a2.value||null;save()};
+      fields.appendChild(fld('tag',a1));fields.appendChild(fld('second tag',a2));
+    }
+    if(e.kind==='activity'){
+      const ft=inp('number',e.felt,'70px');ft.step=0.5;ft.min=0;
+      ft.onchange=()=>{const x=parseFloat(ft.value);e.felt=isNaN(x)?null:x;save();dv.textContent=derivedText(e)};
+      const hr=inp('number',e.hr,'70px');hr.onchange=()=>{const x=parseFloat(hr.value);e.hr=isNaN(x)?null:x;save();dv.textContent=derivedText(e)};
+      const du=inp('number',e.dur,'70px');du.onchange=()=>{const x=parseFloat(du.value);e.dur=isNaN(x)?null:x;save();dv.textContent=derivedText(e)};
+      const di=sel([['1','1 none'],['2','2 light'],['3','3 steady'],['4','4 heavy'],['5','5 relentless']],String(e.dial||3));
+      di.onchange=()=>{e.dial=parseInt(di.value,10);save();dv.textContent=derivedText(e)};
+      const fr=inp('number',e.friction||'','70px');fr.onchange=()=>{e.friction=parseInt(fr.value,10)||null;save()};
+      const re=inp('number',e.recovery||'','70px');re.onchange=()=>{e.recovery=parseInt(re.value,10)||null;save()};
+      const atSel=sel([['revenue-touching','revenue-touching'],['member-facing','member-facing'],['meta','meta']],e.allocation_tag||'revenue-touching');
+      atSel.onchange=()=>{e.allocation_tag=atSel.value;save();renderAllView()};
+      fields.appendChild(fld('felt spoons',ft));fields.appendChild(fld('heart rate',hr));
+      fields.appendChild(fld('minutes',du));fields.appendChild(fld('head load',di));
+      fields.appendChild(fld('friction 1-5',fr));fields.appendChild(fld('recovery 1-5',re));
+      fields.appendChild(fld('allocation',atSel));
+    }
+    wrap.appendChild(head);wrap.appendChild(fields);
+
+    if(e.kind==='activity'){
+      const cw=document.createElement('div');cw.className='conds';
+      e.condTags=e.condTags||{};
+      ACT_TAGS.forEach(tg=>{
+        const l=document.createElement('label');l.className='ct';
+        const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!e.condTags[tg.id];
+        cb.onchange=()=>{e.condTags[tg.id]=cb.checked;save();dv.textContent=derivedText(e)};
+        const s2=document.createElement('span');s2.textContent=tg.label;
+        l.appendChild(cb);l.appendChild(s2);cw.appendChild(l)});
+      wrap.appendChild(cw);
+    }
+    if(e.kind==='checkin'){
+      e.domains=e.domains||{};
+      // Retired fields appear only on entries that hold something in them.
+      SHOWN_DOMAINS.filter(dm=>DOMAINS.indexOf(dm)>-1||(e.domains[dm.id]&&e.domains[dm.id].length)).forEach(dm=>{
+        const box=document.createElement('div');box.className='adom';
+        const l=document.createElement('span');l.className='fl';l.textContent=dm.label;box.appendChild(l);
+        const cw=document.createElement('div');cw.className='conds';
+        const opts=(S.options[dm.id]||[]).slice();
+        (e.domains[dm.id]||[]).forEach(o=>{if(opts.indexOf(o)===-1)opts.push(o)});
+        opts.forEach(o=>{
+          const lab=document.createElement('label');lab.className='ct';
+          const cb=document.createElement('input');cb.type='checkbox';
+          cb.checked=!!(e.domains[dm.id]&&e.domains[dm.id].indexOf(o)>-1);
+          cb.onchange=()=>{const cur=e.domains[dm.id]||[];
+            e.domains[dm.id]=cb.checked?cur.concat([o]):cur.filter(z=>z!==o);save()};
+          const s3=document.createElement('span');s3.textContent=o;
+          lab.appendChild(cb);lab.appendChild(s3);cw.appendChild(lab)});
+        box.appendChild(cw);wrap.appendChild(box)});
+
+      const pairs=(list,cur)=>{const l=list.slice();if(cur&&l.indexOf(cur)===-1)l.push(cur);
+        return [['','pick']].concat(l.map(v=>[v,v]))};
+      const ate=sel(pairs(LAST_ATE,e.lastAte),e.lastAte||'');
+      ate.onchange=()=>{e.lastAte=ate.value;save()};
+      fields.appendChild(fld('last ate',ate));
+
+      if(e.fedState){
+        const fed=sel(pairs(['recently ate','hungry','fasting'],e.fedState),e.fedState);
+        fed.onchange=()=>{e.fedState=fed.value;save()};
+        fields.appendChild(fld('fed',fed));
+      }
+
+      const medLab=()=>'med phase'+(e.medPhaseGuessed?' (guessed)':'');
+      const med=sel(pairs(MED_PHASES,e.medPhase),e.medPhase||'');
+      const medF=fld(medLab(),med);
+      med.onchange=()=>{e.medPhase=med.value;delete e.medPhaseGuessed;save();
+        const lb=medF.querySelector('.fl');if(lb)lb.textContent=medLab()};
+      fields.appendChild(medF);
+
+      const nb=document.createElement('textarea');nb.value=e.note||'';nb.style.marginTop='9px';
+      nb.onchange=()=>{e.note=nb.value;save()};
+      wrap.appendChild(fld('note',nb));
+    }
+    const dv=document.createElement('div');dv.className='aderived';dv.textContent=derivedText(e);
+    wrap.appendChild(dv);
+    host.appendChild(wrap);
+  });
+}
+
+function importText(txt){
+  txt = txt ? txt.replace(/^\uFEFF/, '').trim() : '';
+  if(!txt) return 'Nothing pasted.';
+  
+  const firstLine = txt.split(/\r?\n/)[0].toLowerCase().replace(/["\s]/g, '');
+
+  function parseCsvRows(text) {
+    const lines = text.split(/\r?\n/);
+    const rows = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const cols = [];
+      let cur = '', inQuote = false;
+      for (let c = 0; c < line.length; c++) {
+        if (line[c] === '"') {
+          if (inQuote && line[c+1] === '"') { cur += '"'; c++; }
+          else { inQuote = !inQuote; }
+        } else if (line[c] === ',' && !inQuote) {
+          cols.push(cur); cur = '';
+        } else { cur += line[c]; }
+      }
+      cols.push(cur);
+      rows.push(cols);
+    }
+    return rows;
+  }
+
+  function normDate(dStr) {
+    if (!dStr) return '';
+    let clean = dStr.replace(/\//g, '-').trim();
+    const parts = clean.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4 && parts[1] && parts[2]) {
+        return parts[0] + '-' + parts[1].padStart(2, '0') + '-' + parts[2].padStart(2, '0');
+      } else if (parts[2].length === 4 && parts[0] && parts[1]) {
+        return parts[2] + '-' + parts[1].padStart(2, '0') + '-' + parts[0].padStart(2, '0');
+      }
+    }
+    return clean;
+  }
+
+  if (firstLine.startsWith('date,time,type')) {
+    try {
+      const rows = parseCsvRows(txt);
+      // Old files are positional (focus, mood, energy, appetite, body, wokeup,
+      // note). A header carrying a post-reshape column is read by name instead.
+      const hdr = rows[0].map(h => String(h).trim().toLowerCase().replace(/[\s-]+/g, '_'));
+      const col = (cols, name) => { const i = hdr.indexOf(name); return i > -1 ? (cols[i] || '') : null; };
+      const byName = ['sensory', 'last_ate', 'med_phase'].some(n => hdr.indexOf(n) > -1);
+      let count = 0;
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i];
+        if (cols.length < 3) continue;
+        let dStr = cols[0], tStr = cols[1] || '12:00', type = cols[2].toLowerCase(), rest = cols.slice(3);
+        let isoDate = normDate(dStr);
+        if (!isoDate) continue;
+        const d = day(isoDate);
+        if (tStr.length === 4) tStr = '0' + tStr;
+        const when = isoDate + 'T' + (tStr.length === 5 ? tStr : tStr.slice(0, 5));
+        let exists = d.entries.some(e => e.kind === type && Math.abs(new Date(e.occurredAt) - new Date(when)) < 60000);
+        if (!exists) {
+          if (type === 'dose' || type === 'skip') {
+             d.entries.push({ id: uid(), kind: type, occurredAt: when, loggedAt: when, felt: null });
+             if (type === 'dose') d.dayTags.meds = true;
+             if (type === 'skip') d.dayTags.meds = false;
+             count++;
+          } else if (type === 'checkin') {
+             const domains = {};
+             const split = v => v.split(';').map(s=>s.trim()).filter(Boolean);
+             if (byName) {
+               SHOWN_DOMAINS.forEach(dm => { const v = col(cols, dm.id); if (v) domains[dm.id] = split(v); });
+             } else {
+               const dmKeys = ['focus', 'mood', 'energy', 'appetite', 'body', 'wokeup'];
+               for (let j = 0; j < dmKeys.length; j++) {
+                 if (rest[j]) domains[dmKeys[j]] = split(rest[j]);
+               }
+             }
+             const ci = { id: uid(), kind: 'checkin', occurredAt: when, loggedAt: when, domains: domains,
+               note: (byName ? col(cols, 'note') : rest[6]) || '', lastAte: col(cols, 'last_ate') || '',
+               fedState: col(cols, 'fed_state') || '', medPhase: col(cols, 'med_phase') || '', felt: null };
+             if (ci.medPhase && /^(1|true|yes)$/i.test(col(cols, 'med_phase_guessed') || '')) ci.medPhaseGuessed = true;
+             d.entries.push(ci);
+             count++;
+          }
+        }
+      }
+      save(); renderSettings(); renderAll();
+      return 'Medication CSV imported: ' + count + ' new entries.';
+    } catch(e) { return 'Failed to parse Medication CSV: ' + e.message; }
+  }
+
+  if (firstLine.startsWith('date,type,spoons')) {
+    try {
+      const rows = parseCsvRows(txt);
+      let count = 0;
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i];
+        if (cols.length < 4) continue;
+        const dStr = cols[0], type = cols[1], spoons = cols[2], occurredAt = cols[3], loggedAt = cols[4] || occurredAt;
+        const act = cols[6] || '', act2 = cols[7] || '', hr = cols[9] ? parseFloat(cols[9]) : null;
+        const dur = cols[10] ? parseFloat(cols[10]) : null, dial = cols[11] ? parseInt(cols[11], 10) : 3;
+        const condStr = cols[12] || '', src = cols[14] || 'csv_import';
+        const friction = cols[15] ? parseInt(cols[15], 10) : 3, recovery = cols[16] ? parseInt(cols[16], 10) : 3;
+        const sleepQ = cols[17] ? parseInt(cols[17], 10) : null;
+        const fedState = cols[18] || '', medPhase = cols[19] || '';
+        const lastAte = cols[20] || '', medGuessed = /^(1|true|yes)$/i.test(cols[21] || '');
+
+        let isoDate = normDate(dStr);
+        if (!isoDate && occurredAt) isoDate = occurredAt.slice(0, 10);
+        if (!isoDate) continue;
+        const d = day(isoDate);
+
+        if (type === 'morning_estimate') {
+          d.morningEstimate = spoons !== '' ? parseFloat(spoons) : null;
+          d.morningAt = occurredAt;
+          d.morningLoggedAt = loggedAt;
+          if (sleepQ != null) d.sleepQuality = sleepQ;
+          count++;
+          continue;
+        }
+
+        let kind = type;
+        if (type === 'activity_spend') kind = 'activity';
+        else if (type === 'zero_spoon_event') kind = 'zero';
+
+        let exists = d.entries.some(e => e.kind === kind && Math.abs(new Date(e.occurredAt) - new Date(occurredAt)) < 60000);
+        if (!exists) {
+          const condTags = {};
+          if (condStr) condStr.split(';').forEach(t => { if (t.trim()) condTags[t.trim()] = true; });
+          const entry = {
+            id: uid(), kind: kind, occurredAt: occurredAt, loggedAt: loggedAt,
+            felt: (kind === 'zero') ? 0 : (spoons !== '' ? parseFloat(spoons) : null),
+            activity: act || null, activity2: act2 || null,
+            allocation_tag: (kind === 'activity' ? 'revenue-touching' : undefined),
+            hr: isNaN(hr) ? null : hr, dur: isNaN(dur) ? null : dur,
+            dial: isNaN(dial) ? 3 : dial, friction: isNaN(friction) ? 3 : friction,
+            recovery: isNaN(recovery) ? 3 : recovery, condTags: condTags, src: src,
+            fedState: fedState, medPhase: medPhase
+          };
+          if (lastAte) entry.lastAte = lastAte;
+          if (medPhase && medGuessed) entry.medPhaseGuessed = true;
+          if (kind === 'dose') d.dayTags.meds = true;
+          if (kind === 'skip') d.dayTags.meds = false;
+          d.entries.push(entry);
+          count++;
+        }
+      }
+      save(); renderSettings(); renderAll();
+      return 'Spoon ledger CSV imported: ' + count + ' items.';
+    } catch(e) { return 'Failed to parse Spoon ledger CSV: ' + e.message; }
+  }
+
+  if(txt[0]==='{'){try{const p=JSON.parse(txt);
+    if(p.settings){Object.keys(p.settings).forEach(k=>{S.settings[k]=p.settings[k]})}
+    if(p.options){Object.keys(p.options).forEach(k=>{S.options[k]=(p.options[k]||[]).slice()})}
+    if(Array.isArray(p.chips)){p.chips.forEach(c=>{if(S.chips.indexOf(c)===-1)S.chips.push(c)})}
+    if(Array.isArray(p.migrations)){p.migrations.forEach(m=>{if(S.migrations.indexOf(m)===-1)S.migrations.push(m)})}
+    if(p.days){Object.keys(p.days).forEach(k=>{const src=p.days[k],d=day(k);
+      d.sleep=d.sleep||src.sleep||'';d.sleepQuality=d.sleepQuality||src.sleepQuality||null;d.rhr=d.rhr||src.rhr||'';d.hrv=d.hrv||src.hrv||'';
+      Object.keys(src.tags||src.dayTags||{}).forEach(t=>d.dayTags[t]=(src.tags||src.dayTags)[t]);
+      (src.entries||[]).forEach(e=>{
+        if(e.kind){
+          if(e.kind==='activity'&&!e.allocation_tag)e.allocation_tag='revenue-touching';
+          if(!d.entries.some(x=>x.id===e.id))d.entries.push(e);return}
+        d.entries.push({id:uid(),kind:'activity',occurredAt:k+'T12:00',loggedAt:k+'T12:00',timeUnknown:true,
+          label:e.label||'',activity:null,activity2:null,allocation_tag:'revenue-touching',felt:null,hr:e.hr,dur:e.dur,dial:e.dial,
+          friction:e.friction,recovery:e.recovery,
+          condTags:e.tags||{},src:'ledger'})})});
+      save();renderSettings();renderAll();return'Ledger JSON imported: '+Object.keys(p.days).length+' day(s), settings, chips.'}
+    return'JSON did not contain a days block.'}catch(e){return'That JSON could not be read.'}}
+  return'Could not tell what that is. Only JSON, Medication CSV, and Spoon Ledger CSV supported.';
+}
+function csvEsc(s){s=(s==null)?'':String(s);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
+function exportCsv(){
+  const rows=[['date','type','spoons','occurred_at','logged_at','log_lag_minutes','activity','activity_2',
+    'computed_spoons','hr','duration_min','head_dial','condition_tags','hours_since_dose','source',
+    'task_friction','recovery_rating','sleep_quality','fed_state','med_phase','last_ate','med_phase_guessed']];
+  Object.keys(S.days).sort().forEach(k=>{
+    const d=S.days[k];
+    if(d.morningEstimate!=null){
+      const at=d.morningAt||k+'T00:00',lg=d.morningLoggedAt||at;
+      const ml=Math.round((new Date(lg)-new Date(at))/60000);
+      rows.push([k,'morning_estimate',d.morningEstimate,at,lg,isNaN(ml)?'':ml,'','','','','','','','','',
+                 '','',d.sleepQuality||'','','','','']);}
+    (d.entries||[]).slice().sort((a,b)=>a.occurredAt<b.occurredAt?-1:1).forEach(e=>{
+      const lag=Math.round((new Date(e.loggedAt)-new Date(e.occurredAt))/60000);
+      const h=hoursSinceDose(e.occurredAt);
+      rows.push([k,
+        e.kind==='zero'?'zero_spoon_event':e.kind==='activity'?'activity_spend':e.kind,
+        e.kind==='zero'?0:(e.felt==null?'':e.felt),
+        e.occurredAt,e.loggedAt,isNaN(lag)?'':lag,e.activity||'',e.activity2||'',
+        computedFor(e)==null?'':computedFor(e),e.hr||'',e.dur||'',e.dial||'',
+        Object.keys(e.condTags||{}).filter(t=>e.condTags[t]).join(';'),
+        h==null?'':round(h,1),e.src||'',
+        e.friction||'',e.recovery||'','',e.fedState||'',e.medPhase||'',e.lastAte||'',e.medPhaseGuessed?'true':''])})});
+  return rows.map(r=>r.map(csvEsc).join(',')).join('\n');
+}
+function exportTxt(){
+  const out=['MEDICATION AND CHECK-IN LOG'];
+  Object.keys(S.days).sort().forEach(k=>{
+    const items=(S.days[k].entries||[]).filter(e=>['dose','skip','checkin'].indexOf(e.kind)>-1);
+    if(!items.length&&!S.days[k].wokeUp)return;
+    out.push('','  '+k);
+    if(S.days[k].wokeUp)out.push('    Woke up at: '+S.days[k].wokeUp);
+    items.sort((a,b)=>a.occurredAt<b.occurredAt?-1:1).forEach(e=>{
+      let s='    '+e.occurredAt.slice(11,16)+'  ';
+      if(e.kind==='dose')s+='Dose taken ('+S.settings.doseMg+' mg)';
+      else if(e.kind==='skip')s+='Dose skipped';
+      else{s+=checkinParts(e).join(' · ')||'Check-in';
+        if(e.note)s+=' — '+e.note}
+      out.push(s)});
+    const crashes=(S.days[k].entries||[]).filter(e=>e.kind==='zero');
+    if(crashes.length)out.push('    zero-spoon events: '+crashes.map(c=>c.occurredAt.slice(11,16)).join(', '));
+  });
+  return out.join('\n');
+}
+function download(content,name,mime){
+  const b=new Blob([content],{type:mime}),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=name;a.click();URL.revokeObjectURL(a.href);
+}
+
+const SMAP={'s-budget':'budget','s-carry':'carry','s-carrycredit':'carryCredit','s-sleep':'sleepNeed','s-sleeppen':'sleepPen',
+  's-dose':'doseMg','s-medpeak':'medPeak','s-medpeakh':'medPeakH','s-meddur':'medDurH','s-age':'age','s-rhr':'rhr','s-hrv':'hrv',
+  's-k':'k','s-exp':'exp','s-headscale':'headScale','s-taper':'taper','s-multcap':'multCap'};
+function renderSettings(){
+  Object.keys(SMAP).forEach(id=>{
+    const el = safe(id);
+    if(el && S.settings[SMAP[id]] !== undefined) el.value = S.settings[SMAP[id]];
+  });
+  const uRhr = safe('s-userhr'); if(uRhr) uRhr.checked = !!S.settings.useRHR;
+  const uHrv = safe('s-usehrv'); if(uHrv) uHrv.checked = !!S.settings.useHRV;
+  const mm = safe('s-medmean');
+  if(mm) mm.textContent='Implied daily mean '+medDailyMean().toFixed(1)+' bpm, peak '
+    +S.settings.medPeak+' bpm at '+S.settings.medPeakH+'h, nothing left by '+(S.settings.medDurH+5)+'h.';
+  const sug = suggestedHeadScale();
+  const hs = safe('s-headsugg');
+  if(hs) hs.value = (sug == null ? 'need 3+ paired entries' : String(sug));
+}
+
+function wire(){
+  const btnZero = safe('b-zero');
+  if(btnZero) {
+    makeTwoTap(btnZero, 'Crashed<small>records on tap</small>', ()=>{
+      const n=new Date();
+      if(isBack()){pendingZero=true;openSheet('p-zero');renderZeroSheet();return;}
+      lastZeroId=uid();
+      pushEntry({id:lastZeroId,kind:'zero',occurredAt:iso(n),loggedAt:iso(n),activity:null,activity2:null,felt:0,condTags:{}});
+      openSheet('p-zero');renderZeroSheet();toast('Logged. Chips are right there.');
+    });
+  }
+  safeClick('b-sleep', ()=>{openSheet('p-sleep');renderSleepSheet();});
+  safeClick('b-dose', ()=>{openSheet('p-dose');renderDoseSheet();});
+  safeClick('b-morning', ()=>{openSheet('p-morning');renderSpoonRow();});
+  safeClick('b-checkin', ()=>{openSheet('p-checkin');renderCheckin();});
+  safeClick('b-spend', ()=>{openSheet('p-spend');renderSpendForm();});
+  safeClick('b-skip', ()=>{
+    const n=new Date();
+    day(workKey()).dayTags.meds=false;
+    pushEntry({id:uid(),kind:'skip',occurredAt:stampNow(),loggedAt:iso(n),felt:null});
+    toast('Skipped day logged');
+  });
+  safeClick('sheet-close', closeSheet);
+  
+  const dbDate = safe('daybar-date');
+  if(dbDate) dbDate.onchange = e => setWorkday(e.target.value);
+  safeClick('daybar-today', ()=>setWorkday(null));
+  
+  safeClick('v-log', ()=>setView('log'));
+  safeClick('v-look', ()=>setView('look'));
+  safeClick('v-all', ()=>setView('all'));
+  
+  window.addEventListener('resize', sizeSheet);
+
+  safeClick('sp-save', ()=>{
+    const n=new Date(), hr=parseFloat(safe('sp-hr')?safe('sp-hr').value:''), dur=parseFloat(safe('sp-dur')?safe('sp-dur').value:'');
+    const tags={};document.querySelectorAll('[data-act]').forEach(el=>tags[el.dataset.act]=el.checked);
+    if(draft.felt==null&&(isNaN(hr)||isNaN(dur))){toast('Give it a felt number, or a heart rate and minutes');return;}
+    const when=whenFor('sp-time');
+    const labelVal = safe('sp-label')?safe('sp-label').value.trim():'';
+    const frictionVal = safe('sp-friction')?parseInt(safe('sp-friction').value,10):3;
+    const recoveryVal = safe('sp-recovery')?parseInt(safe('sp-recovery').value,10):3;
+    const dialVal = safe('sp-dial')?parseInt(safe('sp-dial').value,10):3;
+    const allocVal = safe('sp-alloc') ? safe('sp-alloc').value : 'revenue-touching';
+    pushEntry({id:uid(),kind:'activity',occurredAt:when,loggedAt:iso(n),
+      label:labelVal,activity:draft.activity,activity2:draft.activity2,
+      allocation_tag:allocVal || 'revenue-touching',
+      felt:draft.felt,hr:isNaN(hr)?null:hr,dur:isNaN(dur)?null:dur,
+      friction:frictionVal,recovery:recoveryVal,
+      dial:dialVal,condTags:tags,src:'app'});
+    draft={activity:null,activity2:null,felt:null,friction:3,recovery:3,allocation_tag:'revenue-touching'};
+    if(safe('sp-label')) safe('sp-label').value='';
+    if(safe('sp-alloc')) safe('sp-alloc').value='revenue-touching';
+    if(safe('sp-hr')) safe('sp-hr').value='';
+    if(safe('sp-dur')) safe('sp-dur').value='';
+    if(safe('sp-friction')) {
+      safe('sp-friction').value='3';
+      const out = safe('sp-friction').nextElementSibling ? safe('sp-friction').nextElementSibling.querySelector('output') : null;
+      if(out) out.textContent='3';
+    }
+    if(safe('sp-recovery')) {
+      safe('sp-recovery').value='3';
+      const out = safe('sp-recovery').nextElementSibling ? safe('sp-recovery').nextElementSibling.querySelector('output') : null;
+      if(out) out.textContent='3';
+    }
+    document.querySelectorAll('[data-act]').forEach(el=>el.checked=false);
+    renderSpendForm();closeSheet();
+    toast(isBack()?'Logged onto '+dayName(WORKDAY)+' at '+when.slice(11,16)+'. Move the time for the next one.':'Logged');
+  });
+
+  const btnClear = safe('sp-clear');
+  if(btnClear) {
+    makeTwoTap(btnClear, 'Clear', ()=>{
+      draft={activity:null,activity2:null,felt:null,friction:3,recovery:3,allocation_tag:'revenue-touching'};
+      if(safe('sp-label')) safe('sp-label').value='';
+      if(safe('sp-alloc')) safe('sp-alloc').value='revenue-touching';
+      if(safe('sp-hr')) safe('sp-hr').value='';
+      if(safe('sp-dur')) safe('sp-dur').value='';
+      if(safe('sp-time')) safe('sp-time').value='';
+      if(safe('sp-friction')) {
+        safe('sp-friction').value='3';
+        const out = safe('sp-friction').nextElementSibling ? safe('sp-friction').nextElementSibling.querySelector('output') : null;
+        if(out) out.textContent='3';
+      }
+      if(safe('sp-recovery')) {
+        safe('sp-recovery').value='3';
+        const out = safe('sp-recovery').nextElementSibling ? safe('sp-recovery').nextElementSibling.querySelector('output') : null;
+        if(out) out.textContent='3';
+      }
+      document.querySelectorAll('[data-act]').forEach(el=>el.checked=false);
+      syncWhenRows();renderSpendForm();
+    });
+  }
+
+  ['sp-hr','sp-dur','sp-dial','sp-time'].forEach(id=>safeOn(id, 'input', renderSpendWhy));
+  safeOn('sp-time', 'change', renderSpendWhy);
+  safeOn('sp-friction', 'input', e => {
+    draft.friction = parseInt(e.target.value, 10);
+    const out = e.target.nextElementSibling ? e.target.nextElementSibling.querySelector('output') : null;
+    if (out) out.textContent = e.target.value;
+  });
+  safeOn('sp-recovery', 'input', e => {
+    draft.recovery = parseInt(e.target.value, 10);
+    const out = e.target.nextElementSibling ? e.target.nextElementSibling.querySelector('output') : null;
+    if (out) out.textContent = e.target.value;
+  });
+
+  safeClick('ci-save', ()=>{
+    const n=new Date(), note=safe('ci-note')?safe('ci-note').value.trim():'';
+    const clean={};Object.keys(ciDraft.domains).forEach(k=>{if(ciDraft.domains[k].length)clean[k]=ciDraft.domains[k]});
+    const tappedPhase=ciDraft.medTapped?ciDraft.medPhase:'';
+    // The pre-selected phase is not a tap: it rides along only with a real one.
+    if(!Object.keys(clean).length&&!note&&!ciDraft.lastAte&&!tappedPhase){toast('Tap at least one thing');return;}
+    const when=whenFor('ci-time');
+    const entry={id:uid(),kind:'checkin',occurredAt:when,loggedAt:iso(n),domains:clean,note:note,
+               lastAte:ciDraft.lastAte,medPhase:tappedPhase,felt:null};
+    if(!ciDraft.medTapped&&firstDoseOn(workKey())){
+      const g=guessMedPhase(workKey(),when);
+      if(g){entry.medPhase=g.phase;entry.medPhaseGuessed=true}
+    }
+    pushEntry(entry);
+    ciDraft={domains:{},lastAte:'',medPhase:'',medTapped:false};
+    if(safe('ci-note')) safe('ci-note').value='';
+    if(safe('ci-more')) safe('ci-more').open=false;
+    renderCheckin();closeSheet();
+    toast(isBack()?'Check-in logged onto '+dayName(WORKDAY)+' at '+when.slice(11,16):'Check-in logged');
+  });
+
+  safeClick('ci-edit', ()=>{
+    const a=safe('ci-admin');
+    if(a){ a.hidden=!a.hidden; if(!a.hidden) renderCiAdmin(); }
+  });
+
+  safeOn('ci-time', 'change', ()=>{ if(openId==='p-checkin') renderCheckin(); });
+
+  const btnUndo = safe('btn-undo');
+  if(btnUndo) {
+    makeTwoTap(btnUndo, 'Undo last', ()=>{
+      const d=day(workKey());
+      if(!d.entries.length){toast('Nothing to remove');return;}
+      const lg=e=>e.loggedAt||e.occurredAt||'';
+      let pick=null;d.entries.forEach(e=>{if(!pick||lg(e)>=lg(pick))pick=e});
+      const what=(pick.label||combined(pick)||(pick.kind==='zero'?'crash':pick.kind))+' '
+        +(pick.timeUnknown?'(no time)':pick.occurredAt.slice(11,16));
+      d.entries.splice(d.entries.indexOf(pick),1);save();renderAll();toast('Removed '+what);
+    });
+  }
+
+  ['day-sleep','day-rhr','day-hrv'].forEach(id=>safeOn(id, 'input', e=>{
+    day(workKey())[id.replace('day-','')]=e.target.value;save();renderAll();
+  }));
+
+  safeClick('btn-cal', ()=>{
+    const v=safe('cal-energy')?safe('cal-energy').value:'';
+    if(!v){toast('Pick a number first');return;}
+    day(workKey()).feltEnergy=v;save();renderCalibration();toast('Reading saved');
+  });
+
+  Object.keys(SMAP).forEach(id=>safeOn(id, 'input', e=>{
+    const v=parseFloat(e.target.value);if(!isNaN(v)){S.settings[SMAP[id]]=v;save();renderAll();}
+  }));
+  safeOn('s-userhr', 'change', e=>{S.settings.useRHR=e.target.checked;save();renderAll();});
+  safeOn('s-usehrv', 'change', e=>{S.settings.useHRV=e.target.checked;save();renderAll();});
+
+  safeClick('btn-csv', ()=>download(exportCsv(),'spoon-ledger-'+todayKey()+'.csv','text/csv'));
+  safeClick('btn-txt', ()=>download(exportTxt(),'medication-log-'+todayKey()+'.txt','text/plain'));
+  safeClick('btn-json', ()=>download(RESCUE||JSON.stringify(S,null,2),'spoon-ledger-backup-'+todayKey()+'.json','application/json'));
+  safeClick('btn-imp', ()=>{const b=safe('imp-box');if(b){b.hidden=!b.hidden;if(!b.hidden&&safe('imp-text'))safe('imp-text').focus();}});
+  safeClick('imp-go', ()=>{if(safe('imp-note')&&safe('imp-text'))safe('imp-note').textContent=importText(safe('imp-text').value);});
+  const btnReset = safe('btn-reset');
+  if(btnReset) {
+    makeTwoTap(btnReset, 'Erase everything', ()=>{
+      S={settings:{...DEFAULTS},chips:SEED.chips.slice(),options:{},days:{},migrations:[]};
+      Object.keys(DEFAULT_OPTIONS).forEach(id=>S.options[id]=DEFAULT_OPTIONS[id].slice());
+      save();renderSettings();renderAll();toast('Erased');
+    }, ()=>{
+      toast('This wipes every day and every setting. Tap again to confirm.');
+    });
+  }
+}
+
+function renderMorningButtonsStatus(){
+  const k = workKey(), d = dayRO(k);
+  const entries = d.entries || [];
+  const statusMap = {
+    'b-zero': {
+      actioned: entries.some(e => e.kind === 'zero'),
+      defaultSub: 'records on tap',
+      actionedSub: 'logged'
+    },
+    'b-sleep': {
+      actioned: (d.sleep !== '' && d.sleep != null) || d.sleepQuality != null || !!d.wokeUp,
+      defaultSub: 'opens a form',
+      actionedSub: 'logged'
+    },
+    'b-dose': {
+      actioned: entries.some(e => e.kind === 'dose' || e.kind === 'skip') || (d.dayTags && (d.dayTags.meds === true || d.dayTags.meds === false)),
+      defaultSub: 'asks when',
+      actionedSub: 'logged'
+    },
+    'b-morning': {
+      actioned: d.morningEstimate != null,
+      defaultSub: 'opens a form',
+      actionedSub: 'logged'
+    },
+    'b-checkin': {
+      actioned: entries.some(e => e.kind === 'checkin') || (d.feltEnergy != null && d.feltEnergy !== ''),
+      defaultSub: 'opens a form',
+      actionedSub: 'logged'
+    }
+  };
+
+  Object.keys(statusMap).forEach(id => {
+    const btn = safe(id);
+    if (!btn) return;
+    const cfg = statusMap[id];
+    btn.classList.toggle('actioned', !!cfg.actioned);
+    const sub = cfg.actioned ? cfg.actionedSub : cfg.defaultSub;
+    if (id === 'b-zero') {
+      btn._defaultHtml = 'Crashed<small>' + sub + '</small>';
+      if (!btn.classList.contains('is-armed')) {
+        btn.innerHTML = btn._defaultHtml;
+      }
+    } else {
+      const sm = btn.querySelector('small');
+      if (sm) sm.textContent = sub;
+    }
+  });
+}
+
+function renderAll(){
+  renderDaybar();
+  const k=workKey(),d=dayRO(k);
+  const elSleep=safe('day-sleep'), elRhr=safe('day-rhr'), elHrv=safe('day-hrv');
+  if(elSleep) elSleep.value=d.sleep||'';
+  if(elRhr) elRhr.value=d.rhr||'';
+  if(elHrv) elHrv.value=d.hrv||'';
+  document.querySelectorAll('[data-day]').forEach(el=>el.checked=!!d.dayTags[el.dataset.day]);
+  renderBalance();renderTimeline();renderLedger();renderPresets();renderTagAdmin();renderCarryChain();renderCalibration();renderSettings();
+  renderMorningButtonsStatus();
+  if(openId==='p-morning')renderSpoonRow();
+  if(openId==='p-spend')renderSpendForm();
+  if(openId==='p-zero')renderZeroSheet();
+  if(openId==='p-dose')renderDoseSheet();
+  if(openId==='p-sleep')renderSleepSheet();
+}
+
+
+function buildDefaultDemoSeed() {
+  const pad = n => (n < 10 ? '0' : '') + n;
+  const dayOff = off => {
+    const d = new Date();
+    d.setDate(d.getDate() + off);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  };
+  const d0 = dayOff(0), d1 = dayOff(-1), d2 = dayOff(-2);
+  return {
+    settings: {},
+    chips: ['desk work', 'writing', 'admin', 'meeting', 'social', 'exercise', 'walk', 'cooking / meal', 'reading', 'commute', 'rest'],
+    options: {},
+    migrations: [],
+    days: {
+      [d2]: {
+        sleep: '7.5', sleepQuality: 4, morningEstimate: 7, rhr: '', hrv: '',
+        dayTags: { meds: true }, feltEnergy: '2',
+        entries: [
+          { id: 'sl-d2-1', kind: 'dose', occurredAt: d2 + 'T07:15:00', loggedAt: d2 + 'T07:15:00', mg: 50, note: 'morning dose' },
+          { id: 'sl-d2-2', kind: 'activity', occurredAt: d2 + 'T09:30:00', loggedAt: d2 + 'T09:30:00', felt: 2.0, chip: 'desk work', label: 'Client deliverables', dial: 3, tags: { flow: true }, allocation_tag: 'revenue-touching' },
+          { id: 'sl-d2-3', kind: 'activity', occurredAt: d2 + 'T14:00:00', loggedAt: d2 + 'T14:00:00', felt: 2.5, chip: 'meeting', label: 'Project review call', dial: 4, tags: { social: true, mask: true }, allocation_tag: 'member-facing' },
+          { id: 'sl-d2-4', kind: 'activity', occurredAt: d2 + 'T16:15:00', loggedAt: d2 + 'T16:15:00', felt: 1.5, chip: 'walk', label: 'Afternoon walk', dial: 1, tags: {}, allocation_tag: 'meta' }
+        ]
+      },
+      [d1]: {
+        sleep: '7', sleepQuality: 3, morningEstimate: 6, rhr: '', hrv: '',
+        dayTags: { meds: true }, feltEnergy: '1',
+        entries: [
+          { id: 'sl-d1-1', kind: 'dose', occurredAt: d1 + 'T07:30:00', loggedAt: d1 + 'T07:30:00', mg: 50, note: 'morning dose' },
+          { id: 'sl-d1-2', kind: 'activity', occurredAt: d1 + 'T09:00:00', loggedAt: d1 + 'T09:00:00', felt: 2.5, chip: 'writing', label: 'Workshop guide draft', dial: 3, tags: {}, allocation_tag: 'revenue-touching' },
+          { id: 'sl-d1-3', kind: 'activity', occurredAt: d1 + 'T13:30:00', loggedAt: d1 + 'T13:30:00', felt: 2.5, chip: 'admin', label: 'Quarterly bookkeeping', dial: 4, tags: { admin: true }, allocation_tag: 'meta' }
+        ]
+      },
+      [d0]: {
+        sleep: '7.5', sleepQuality: 4, morningEstimate: 7, rhr: '', hrv: '',
+        dayTags: { meds: true }, feltEnergy: '',
+        entries: [
+          { id: 'sl-d0-1', kind: 'dose', occurredAt: d0 + 'T07:30:00', loggedAt: d0 + 'T07:30:00', mg: 50, note: 'morning dose' },
+          { id: 'sl-d0-2', kind: 'activity', occurredAt: d0 + 'T09:00:00', loggedAt: d0 + 'T09:00:00', felt: 2.0, chip: 'desk work', label: 'Client notes & replies', dial: 3, tags: {}, allocation_tag: 'revenue-touching' },
+          { id: 'sl-d0-3', kind: 'activity', occurredAt: d0 + 'T11:15:00', loggedAt: d0 + 'T11:15:00', felt: 1.5, chip: 'writing', label: 'Homepage draft edit', dial: 2, tags: { flow: true }, allocation_tag: 'revenue-touching' },
+          { id: 'sl-d0-4', kind: 'checkin', occurredAt: d0 + 'T13:00:00', loggedAt: d0 + 'T13:00:00', domains: { energy: ['Fine'], focus: ['Steady'], mood: ['Level'] }, note: '', lastAte: '1 to 2 hours ago', medPhase: 'steady', felt: null },
+          { id: 'sl-d0-5', kind: 'activity', occurredAt: d0 + 'T14:30:00', loggedAt: d0 + 'T14:30:00', felt: 1.5, chip: 'admin', label: 'Invoicing & receipts', dial: 3, tags: { admin: true }, allocation_tag: 'meta' }
+        ]
+      }
+    }
+  };
+}
+window.startApp = async function() {
+    if(window.appStarted) return;
+    window.appStarted = true;
+    const wrap = document.getElementById('app-wrap');
+    if (wrap) wrap.style.display = 'block';
+    SEED = buildDefaultDemoSeed();
+    try {
+        const resp = await fetch('seed.json');
+        if(resp.ok) {
+            const data = await resp.json();
+            if (data && data.days && Object.keys(data.days).length > 0) {
+                SEED = {
+                    settings: data.settings || {},
+                    options: data.options || {},
+                    days: data.days || {},
+                    chips: data.chips || SEED.chips,
+                    migrations: data.migrations || []
+                };
+            }
+        }
+    } catch(e) {}
+    init();
+};
+if (document.readyState !== 'loading') window.startApp();
+
+function seedIn(){
+  if(SEED.settings) {
+    Object.keys(SEED.settings).forEach(k=>{ S.settings[k] = SEED.settings[k]; });
+  }
+  if(SEED.options) {
+    Object.keys(SEED.options).forEach(k=>{ S.options[k] = (SEED.options[k]||[]).slice(); });
+  }
+  Object.keys(SEED.days || {}).forEach(k=>{
+    const src=SEED.days[k],d=day(k);
+    if(d.morningEstimate==null){d.morningEstimate=src.morningEstimate;
+      d.morningAt=src.morningAt||'';d.morningLoggedAt=src.morningLoggedAt||''}
+    d.sleep=d.sleep||src.sleep;d.sleepQuality=d.sleepQuality||src.sleepQuality||null;
+    d.rhr=d.rhr||src.rhr;d.hrv=d.hrv||src.hrv;
+    Object.keys(src.dayTags||{}).forEach(t=>{if(d.dayTags[t]===undefined)d.dayTags[t]=src.dayTags[t]});
+    const have={};d.entries.forEach(e=>have[e.id]=1);
+    src.entries.forEach(e=>{if(!have[e.id])d.entries.push(JSON.parse(JSON.stringify(e)))});
+    d.entries.sort((a,b)=>a.occurredAt<b.occurredAt?-1:1);
+  });
+  (SEED.chips || []).forEach(c=>{if(S.chips.indexOf(c)===-1)S.chips.push(c)});
+}
+
+function init(){
+  try{
+    Object.keys(DEFAULT_OPTIONS).forEach(id=>S.options[id]=DEFAULT_OPTIONS[id].slice());
+    S.chips=(SEED.chips && SEED.chips.length ? SEED.chips : DEFAULT_CHIPS).slice();
+    buildToggles();wire();renderSettings();setView('log');renderAll();noteStorage();
+  }catch(e){const t=safe('toast');if(t){t.textContent='Startup problem: '+e.message;t.classList.add('on')}console.error(e);return;}
+  load().then(()=>{
+    READY=true;
+    if(S.migrations.indexOf('seed-2026-08-14-new')===-1){seedIn();S.migrations.push('seed-2026-08-14-new');save();}
+    if(S.migrations.indexOf(CHECKIN_RESHAPE)===-1){migrateCheckinReshape();save();}
+    try{setView(S.settings.view||'log');renderSettings();renderAll();noteStorage()}catch(e){console.error(e)}
+  }).catch(e=>{
+    console.error('Ledger load error:', e);
+    READY=true;
+    try{setView(S.settings.view||'log');renderSettings();renderAll();noteStorage()}catch(err){console.error(err)}
+    toast('Cloud sync unavailable. Operating locally.');
+  });
+}
+
+// startApp is called by the gate, and only after a real GET has confirmed the
+// ledger service answers. Nothing auto-starts here: opening the app before the
+// backend is known-good is how you end up logging into an unsynced local copy.
+</script>
+</body>
+</html>
+
+
+
