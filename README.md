@@ -1,12 +1,12 @@
 # Tools for my week
 
+**Why I built these, and why I still rented a room:** [ndagency.digital/apps-i-built](https://ndagency.digital/apps-i-built)
+
 Five small, standalone tools I built for my own week — shared here as-is to read, copy, or fork.
 
 > **Boundary:** Built for my own week; shared to read, copy, or fork. I don't take feature requests, issues, or pull requests.
 
 My working copies connect to private databases, calendars, and message threads. Each folder here is a clean, self-contained copy wired to browser `localStorage` or synthetic demo data so you can open and explore it with zero cloud setup or personal data.
-
-Read the companion essay on [ndagency.digital/apps-i-built](https://ndagency.digital/apps-i-built).
 
 ---
 
